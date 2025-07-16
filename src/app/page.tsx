@@ -7,23 +7,6 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const fetchData = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch("/api/hello");
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      const data = await response.json();
-      setMessage(data.message);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      setMessage("Failed to fetch data");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type === "application/pdf") {
