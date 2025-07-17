@@ -70,12 +70,6 @@ const Overview: React.FC<OverviewProps> = ({ event }) => {
           <div className="text-9xl mb-6 animate-bounce">{getEventTypeIcon(event.type)}</div>
           <h1 className="text-5xl font-bold text-dark-royalty mb-4 font-poppins">{event.name}</h1>
           
-          {event.venue && (
-            <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <span className="text-xl">📍</span>
-              <span className="font-semibold text-deep-sea/80">{event.venue}</span>
-            </div>
-          )}
         </div>
       </div>
 

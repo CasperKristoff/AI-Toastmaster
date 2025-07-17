@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { User } from "firebase/auth";
 import { useAuth } from "../../hooks/useAuth";
 import { Event, Guest, EventSegment, SegmentType } from "../../types/event";
 import { eventService } from "../../services/eventService";
+import EventCreationForm from "./components/EventCreationForm";
 import PersonalFunfact from "./sections/PersonalFunfact";
 import Overview from "./components/Overview";
 import Guests from "./components/Guests";
@@ -32,8 +33,178 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+type TabType = { id: 'overview' | 'guests' | 'timeline' | 'presentation'; label: string; icon: string };
+
+function SectionProgress({ event, activeTab }: { event: any, activeTab: string }) {
+  // Define completion logic for each section
+  const sections = [
+    { id: 'overview', label: 'Overview', complete: !!event?.name },
+    { id: 'guests', label: 'Guests', complete: event?.guests?.length > 0 },
+    { id: 'timeline', label: 'Event Program', complete: event?.timeline?.length > 0 },
+    { id: 'presentation', label: 'Start Presentation', complete: event?.timeline?.length > 0 },
+  ];
+  const completedCount = sections.filter(s => s.complete).length;
+  return (
+    <div className="flex items-center justify-center mb-4">
+      <span className="text-deep-sea/70 text-sm font-medium bg-white/60 px-4 py-2 rounded-full shadow border border-dark-royalty/10">
+        {completedCount} of {sections.length} sections completed
+      </span>
+    </div>
+  );
+}
+
+function SectionTabs({ tabs, activeTab, setActiveTab, lastTab, setLastTab, event, router }: {
+  tabs: TabType[];
+  activeTab: TabType['id'];
+  setActiveTab: (id: TabType['id']) => void;
+  lastTab: TabType['id'];
+  setLastTab: (id: TabType['id']) => void;
+  event: any;
+  router: any;
+}) {
+  const activeIdx = tabs.findIndex(tab => tab.id === activeTab);
+
+  // Define completion logic for each section
+  const getStepStatus = (tabId: TabType['id']) => {
+    const stepIndex = tabs.findIndex(tab => tab.id === tabId);
+    const activeIndex = tabs.findIndex(tab => tab.id === activeTab);
+    if (stepIndex < activeIndex) return 'completed';
+    if (stepIndex === activeIndex) return 'current';
+    return 'upcoming';
+  };
+
+  return (
+    <div className="w-full flex flex-col items-center">
+      <div className="relative w-full flex items-center justify-between" style={{ minHeight: '80px' }}>
+        {/* Progress line background */}
+        <div className="absolute left-0 right-0 h-2 bg-gray-200 rounded-full" style={{ top: '40px', transform: 'translateY(-50%)' }} />
+        {/* Progress fill */}
+        <div
+          className="absolute h-2 bg-blue-500 rounded-full transition-all duration-500 ease-out"
+          style={{
+            top: '40px',
+            left: 0,
+            width: `calc(${(100 / (tabs.length - 1)) * activeIdx}%)`,
+            transform: 'translateY(-50%)',
+          }}
+        />
+        {/* Circles */}
+        {tabs.map((tab, idx) => {
+          const isActive = activeTab === tab.id;
+          const status = getStepStatus(tab.id);
+          const isCompleted = status === 'completed';
+          const isCurrent = status === 'current';
+          return (
+            <div
+              key={tab.id}
+              className="flex flex-col items-center relative z-10"
+              style={{ flex: 1 }}
+            >
+              <button
+                onClick={() => {
+                  if (tab.id === 'presentation') {
+                    if (event) {
+                      router.push(`/presentation?eventId=${event.id}&startIndex=0`);
+                    }
+                  } else {
+                    setLastTab(activeTab);
+                    setActiveTab(tab.id);
+                  }
+                }}
+                className={`flex items-center justify-center w-20 h-20 rounded-full border-2 transition-all duration-300 shadow-sm bg-white cursor-pointer group
+                  ${isCompleted ? 'border-blue-500 bg-blue-500 hover:shadow-lg hover:scale-105' :
+                    isCurrent ? 'border-blue-500 bg-white hover:shadow-lg hover:scale-105' :
+                    'border-gray-300 bg-white hover:border-blue-300 hover:shadow-md hover:scale-105'}
+                  focus:outline-none focus:ring-2 focus:ring-blue-500/50`}
+                title={`Click to go to ${tab.label}`}
+              >
+                {isCompleted && (
+                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+                {/* Hover indicator for non-completed steps */}
+                {!isCompleted && (
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
+              </button>
+              <span
+                className={`mt-3 text-base font-medium transition-all duration-300 text-center
+                  ${isCompleted ? 'text-blue-600' :
+                    isCurrent ? 'text-blue-600 font-semibold' :
+                    'text-gray-400 group-hover:text-gray-600'}
+                `}
+              >
+                {tab.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      
+      {/* Navigation Buttons */}
+      <div className="flex items-center justify-between w-full mt-6 px-4">
+        <button
+          onClick={() => {
+            const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
+            if (currentIndex > 0) {
+              const prevTab = tabs[currentIndex - 1];
+              setLastTab(activeTab);
+              setActiveTab(prevTab.id);
+            }
+          }}
+          disabled={activeIdx === 0}
+          className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-300
+            ${activeIdx === 0 
+              ? 'text-gray-400 cursor-not-allowed' 
+              : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50 cursor-pointer'
+            }`}
+        >
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+          </svg>
+          <span>Previous</span>
+        </button>
+        
+        <button
+          onClick={() => {
+            const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
+            if (currentIndex < tabs.length - 1) {
+              const nextTab = tabs[currentIndex + 1];
+              if (nextTab.id === 'presentation') {
+                if (event) {
+                  router.push(`/presentation?eventId=${event.id}&startIndex=0`);
+                }
+              } else {
+                setLastTab(activeTab);
+                setActiveTab(nextTab.id);
+              }
+            }
+          }}
+          disabled={activeIdx === tabs.length - 1}
+          className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-300
+            ${activeIdx === tabs.length - 1 
+              ? 'text-gray-400 cursor-not-allowed' 
+              : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50 cursor-pointer'
+            }`}
+        >
+          <span>Next</span>
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function NewEventPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading } = useAuth();
   const [event, setEvent] = useState<Event | null>(null);
   const [userEvents, setUserEvents] = useState<Event[]>([]);
@@ -486,7 +657,7 @@ export default function NewEventPage() {
     setOpenMenuId(null);
   };
 
-  const tabs = [
+  const tabs: TabType[] = [
     { id: 'overview', label: 'Overview', icon: '📊' },
     { id: 'guests', label: 'Guests', icon: '👥' },
     { id: 'timeline', label: 'Event Program', icon: '⏰' },
@@ -528,12 +699,59 @@ export default function NewEventPage() {
     setActiveTab('overview');
   };
 
+  const handleEventCreated = async (eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!user) return;
+
+    try {
+      const eventId = await eventService.createEvent(eventData, user.uid);
+      console.log("Event created with ID:", eventId);
+      
+      // Redirect back to the dashboard (without create parameter)
+      router.push('/newEvent');
+    } catch (error) {
+      console.error("Error creating event:", error);
+      alert("Failed to create event. Please try again.");
+    }
+  };
+
+  // Check if we're in create mode
+  const isCreateMode = searchParams.get('create') === 'true';
+
   if (!user) {
     // This will be null on initial load, and after auth check if user is not logged in.
     // The useEffect hook will redirect to '/' if user is not logged in after loading is complete.
     return null; 
   }
 
+  // Show EventCreationForm if in create mode
+  if (isCreateMode) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-deep-sea/5 via-white to-kimchi/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-4xl font-bold text-dark-royalty font-poppins">Create New Event</h1>
+              <p className="text-deep-sea/70 text-lg">Set up your event details</p>
+            </div>
+            <button
+              onClick={() => router.push('/newEvent')}
+              className="px-6 py-3 bg-white/70 backdrop-blur-xl text-dark-royalty rounded-xl border border-dark-royalty/20 hover:border-dark-royalty/40 hover:bg-white/90 transition-all duration-300 hover:scale-105 font-medium"
+            >
+              ← Back to Dashboard
+            </button>
+          </div>
+
+          {/* EventCreationForm */}
+          <div className="bg-white/50 backdrop-blur-xl rounded-2xl p-8 border border-dark-royalty/10">
+            <EventCreationForm onEventCreated={handleEventCreated} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show dashboard (existing logic)
   if (!event) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-deep-sea/5 via-white to-kimchi/5 flex items-center justify-center">
@@ -542,7 +760,7 @@ export default function NewEventPage() {
           <h2 className="text-2xl font-bold text-dark-royalty mb-2">No event selected</h2>
           <p className="text-deep-sea/70 mb-6">Create a new event to get started.</p>
           <button
-            onClick={handleCreateNewEvent}
+            onClick={() => router.push('/newEvent?create=true')}
             className="px-6 py-3 bg-dark-royalty text-white rounded-lg hover:bg-dark-royalty/90 transition-all duration-300 text-lg font-medium"
           >
             Create New Event
@@ -574,11 +792,7 @@ export default function NewEventPage() {
       <div className="min-h-screen bg-gradient-to-br from-deep-sea/5 via-white to-kimchi/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-4xl font-bold text-dark-royalty font-poppins">Event Dashboard</h1>
-              <p className="text-deep-sea/70 text-lg">Manage and customize your event</p>
-            </div>
+          <div className="flex justify-end items-center mb-8">
             <button
               onClick={() => router.push('/')}
               className="px-6 py-3 bg-white/70 backdrop-blur-xl text-dark-royalty rounded-xl border border-dark-royalty/20 hover:border-dark-royalty/40 hover:bg-white/90 transition-all duration-300 hover:scale-105 font-medium"
@@ -589,31 +803,15 @@ export default function NewEventPage() {
 
           {/* Tab Navigation */}
           <div className="mb-8">
-            <div className="flex space-x-2">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    if (tab.id === 'presentation') {
-                      if (event) {
-                        router.push(`/presentation?eventId=${event.id}&startIndex=0`);
-                      }
-                    } else {
-                      setLastTab(activeTab);
-                      setActiveTab(tab.id as any);
-                    }
-                  }}
-                  className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 rounded-xl font-medium transition-all duration-300 ${
-                    activeTab === tab.id
-                      ? 'bg-dark-royalty text-white shadow-lg scale-105'
-                      : 'text-deep-sea/70 hover:text-dark-royalty hover:bg-white/50 hover:scale-105'
-                  }`}
-                >
-                  <span className="text-xl">{tab.icon}</span>
-                  <span>{tab.label}</span>
-                </button>
-              ))}
-            </div>
+            <SectionTabs
+              tabs={tabs}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab as (id: TabType['id']) => void}
+              lastTab={lastTab}
+              setLastTab={setLastTab as (id: TabType['id']) => void}
+              event={event}
+              router={router}
+            />
           </div>
 
           {/* Tab Content */}
