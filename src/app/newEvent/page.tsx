@@ -6,13 +6,12 @@ import { User } from "firebase/auth";
 import { useAuth } from "../../hooks/useAuth";
 import { Event, Guest, EventSegment, SegmentType } from "../../types/event";
 import { eventService } from "../../services/eventService";
-import PersonalFunfact from "../../components/PersonalFunfact";
-import PersonalFunfactModal from "../../components/PersonalFunfactModal";
-import Overview from "../../components/Overview";
-import Guests from "../../components/Guests";
-import EventProgram from "../../components/EventProgram";
-import AddGuestModal from "../../components/AddGuestModal";
-import AddSegmentModal from "../../components/AddSegmentModal";
+import PersonalFunfact from "./sections/PersonalFunfact";
+import Overview from "./components/Overview";
+import Guests from "./components/Guests";
+import EventProgram from "./components/EventProgram";
+import AddGuestModal from "./components/AddGuestModal"; 
+import AddSegmentModal from "./sections/AddSegmentModal";
 import {
   DndContext,
   closestCenter,
@@ -690,12 +689,13 @@ export default function NewEventPage() {
         />
 
         {/* Personal Fun Facts Modal */}
-        <PersonalFunfactModal
+        <PersonalFunfact
+          isModal={true}
           isOpen={showPersonalFunfactModal}
           onClose={() => setShowPersonalFunfactModal(false)}
           guests={event?.guests || []}
           funFacts={newSegment.personalFunFacts}
-          onSave={handleSavePersonalFunfacts}
+          onFunFactsChange={handleSavePersonalFunfacts}
         />
       </div>
     </DndContext>

@@ -6,7 +6,7 @@ import { User } from "firebase/auth";
 import { useAuth } from "../hooks/useAuth";
 import LoginForm from "../components/LoginForm";
 import SignupForm from "../components/SignupForm";
-import EventCreationForm from "../components/EventCreationForm";
+import EventCreationForm from "./newEvent/components/EventCreationForm";
 import { Event } from "../types/event";
 import { eventService } from "../services/eventService";
 

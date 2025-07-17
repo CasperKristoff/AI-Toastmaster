@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Event, EventType, EventTone } from "../types/event";
+import { Event, EventType, EventTone } from "../../../types/event";
 
 interface EventCreationFormProps {
   onEventCreated?: (event: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>) => void;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { SegmentType } from '../types/event';
+import { SegmentType } from '../../../types/event';
 
 interface AddSegmentModalProps {
   isOpen: boolean;
