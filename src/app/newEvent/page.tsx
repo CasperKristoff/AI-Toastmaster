@@ -154,25 +154,6 @@ export default function NewEventPage() {
     return () => {};
   }, [user, loading, router]);
 
-  // Show loading state
-  if (loading || eventsLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-deep-sea/5 via-white to-kimchi/5 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4 animate-bounce">🎬</div>
-          <h2 className="text-2xl font-bold text-dark-royalty mb-2">Loading Event Dashboard...</h2>
-          <p className="text-deep-sea/70">Getting your events ready</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    // This will be null on initial load, and after auth check if user is not logged in.
-    // The useEffect hook will redirect to '/' if user is not logged in after loading is complete.
-    return null; 
-  }
-
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {
       weekday: 'long',
@@ -548,6 +529,12 @@ export default function NewEventPage() {
     setActiveTab('overview');
   };
 
+  if (!user) {
+    // This will be null on initial load, and after auth check if user is not logged in.
+    // The useEffect hook will redirect to '/' if user is not logged in after loading is complete.
+    return null; 
+  }
+
   if (!event) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-deep-sea/5 via-white to-kimchi/5 flex items-center justify-center">
@@ -566,6 +553,7 @@ export default function NewEventPage() {
     );
   }
   
+  // Show loading state
   if (loading || eventsLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-deep-sea/5 via-white to-kimchi/5 flex items-center justify-center">
@@ -576,12 +564,6 @@ export default function NewEventPage() {
         </div>
       </div>
     );
-  }
-
-  if (!user) {
-    // This will be null on initial load, and after auth check if user is not logged in.
-    // The useEffect hook will redirect to '/' if user is not logged in after loading is complete.
-    return null; 
   }
 
   return (
