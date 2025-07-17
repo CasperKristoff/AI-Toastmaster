@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { User } from "firebase/auth";
 import { useAuth } from "../../hooks/useAuth";
-import { Event, Guest, EventSegment, SegmentType } from "../../types/event";
+import { getAuth, signOut } from "firebase/auth";
+import { Event, EventSegment, SegmentType } from "../../types/event";
 import { eventService } from "../../services/eventService";
 import EventCreationForm from "./components/EventCreationForm";
 import PersonalFunfact from "./sections/PersonalFunfact";
@@ -13,6 +13,7 @@ import Guests from "./components/Guests";
 import EventProgram from "./components/EventProgram";
 import AddGuestModal from "./components/AddGuestModal"; 
 import AddSegmentModal from "./sections/AddSegmentModal";
+import PresentationPreview from "./components/PresentationPreview";
 import {
   DndContext,
   closestCenter,
@@ -24,43 +25,18 @@ import {
 } from '@dnd-kit/core';
 import {
   arrayMove,
-  SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import {
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 
 type TabType = { id: 'overview' | 'guests' | 'timeline' | 'presentation'; label: string; icon: string };
 
-function SectionProgress({ event, activeTab }: { event: any, activeTab: string }) {
-  // Define completion logic for each section
-  const sections = [
-    { id: 'overview', label: 'Overview', complete: !!event?.name },
-    { id: 'guests', label: 'Guests', complete: event?.guests?.length > 0 },
-    { id: 'timeline', label: 'Event Program', complete: event?.timeline?.length > 0 },
-    { id: 'presentation', label: 'Start Presentation', complete: event?.timeline?.length > 0 },
-  ];
-  const completedCount = sections.filter(s => s.complete).length;
-  return (
-    <div className="flex items-center justify-center mb-4">
-      <span className="text-deep-sea/70 text-sm font-medium bg-white/60 px-4 py-2 rounded-full shadow border border-dark-royalty/10">
-        {completedCount} of {sections.length} sections completed
-      </span>
-    </div>
-  );
-}
 
-function SectionTabs({ tabs, activeTab, setActiveTab, lastTab, setLastTab, event, router }: {
+
+function SectionTabs({ tabs, activeTab, setActiveTab, setLastTab }: {
   tabs: TabType[];
   activeTab: TabType['id'];
   setActiveTab: (id: TabType['id']) => void;
-  lastTab: TabType['id'];
   setLastTab: (id: TabType['id']) => void;
-  event: any;
-  router: any;
 }) {
   const activeIdx = tabs.findIndex(tab => tab.id === activeTab);
 
@@ -89,8 +65,7 @@ function SectionTabs({ tabs, activeTab, setActiveTab, lastTab, setLastTab, event
           }}
         />
         {/* Circles */}
-        {tabs.map((tab, idx) => {
-          const isActive = activeTab === tab.id;
+        {tabs.map((tab) => {
           const status = getStepStatus(tab.id);
           const isCompleted = status === 'completed';
           const isCurrent = status === 'current';
@@ -102,14 +77,8 @@ function SectionTabs({ tabs, activeTab, setActiveTab, lastTab, setLastTab, event
             >
               <button
                 onClick={() => {
-                  if (tab.id === 'presentation') {
-                    if (event) {
-                      router.push(`/presentation?eventId=${event.id}&startIndex=0`);
-                    }
-                  } else {
-                    setLastTab(activeTab);
-                    setActiveTab(tab.id);
-                  }
+                  setLastTab(activeTab);
+                  setActiveTab(tab.id);
                 }}
                 className={`flex items-center justify-center w-20 h-20 rounded-full border-2 transition-all duration-300 shadow-sm bg-white cursor-pointer group
                   ${isCompleted ? 'border-blue-500 bg-blue-500 hover:shadow-lg hover:scale-105' :
@@ -175,14 +144,8 @@ function SectionTabs({ tabs, activeTab, setActiveTab, lastTab, setLastTab, event
             const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
             if (currentIndex < tabs.length - 1) {
               const nextTab = tabs[currentIndex + 1];
-              if (nextTab.id === 'presentation') {
-                if (event) {
-                  router.push(`/presentation?eventId=${event.id}&startIndex=0`);
-                }
-              } else {
-                setLastTab(activeTab);
-                setActiveTab(nextTab.id);
-              }
+              setLastTab(activeTab);
+              setActiveTab(nextTab.id);
             }
           }}
           disabled={activeIdx === tabs.length - 1}
@@ -207,7 +170,8 @@ export default function NewEventPage() {
   const searchParams = useSearchParams();
   const { user, loading } = useAuth();
   const [event, setEvent] = useState<Event | null>(null);
-  const [userEvents, setUserEvents] = useState<Event[]>([]);
+
+
   const [eventsLoading, setEventsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'guests' | 'timeline' | 'presentation'>('overview');
   const [showAddGuestModal, setShowAddGuestModal] = useState(false);
@@ -237,7 +201,9 @@ export default function NewEventPage() {
     personalFunFacts: {}
   });
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [lastTab, setLastTab] = useState<'overview' | 'guests' | 'timeline' | 'presentation'>('overview');
+  const [, setLastTab] = useState<'overview' | 'guests' | 'timeline' | 'presentation'>('overview');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Sensors for drag and drop
   const sensors = useSensors(
@@ -263,65 +229,15 @@ export default function NewEventPage() {
     // Reset loading state when starting new subscription
     setEventsLoading(true);
 
-    // TEMPORARILY DISABLED FIRESTORE - Using mock data
-    // const unsubscribe = eventService.subscribeToUserEvents(user.uid, (events) => {
-    //   setUserEvents(events);
-    //   // Set the first event as the current event, or create a new one
-    //   if (events.length > 0) {
-    //     setEvent(events[0]);
-    //   }
-    //   setEventsLoading(false); // Events have loaded (whether empty or not)
-    // });
-
-    // Mock event data for testing
-    const mockEvent: Event = {
-      id: "mock-event-1",
-      userId: user.uid,
-      name: "Test Event",
-      type: "house",
-      date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-      startTime: "19:00",
-      duration: 120,
-      venue: "Test Venue",
-      tone: "casual",
-      guests: [
-        { id: "1", name: "Alice", relationship: "Friend" },
-        { id: "2", name: "Bob", relationship: "Colleague" }
-      ],
-      timeline: [
-        {
-          id: "1",
-          type: "welcome",
-          title: "Welcome & Greetings",
-          description: "Warm welcome to all guests",
-          duration: 15,
-          content: "Welcome everyone!",
-          order: 1,
-          isCustom: false
-        },
-        {
-          id: "2", 
-          type: "activity",
-          title: "Ice Breaker Game",
-          description: "Fun activity to get everyone talking",
-          duration: 20,
-          content: "Two truths and a lie",
-          order: 2,
-          isCustom: false
-        }
-      ],
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    console.log("Mock event guests:", mockEvent.guests);
-    setUserEvents([mockEvent]);
-    setEvent(mockEvent);
-    setEventsLoading(false);
-
-    // Return empty cleanup function
-    return () => {};
+    const unsubscribe = eventService.subscribeToUserEvents(user.uid, (events) => {
+      if (events.length > 0) {
+        setEvent(events[0]);
+      } else {
+        setEvent(null);
+      }
+      setEventsLoading(false);
+    });
+    return unsubscribe;
   }, [user, loading, router]);
 
   const formatDate = (date: Date) => {
@@ -369,17 +285,7 @@ export default function NewEventPage() {
     return labels[type as keyof typeof labels] || "Event";
   };
 
-  const getToneColor = (tone: string) => {
-    const colors = {
-      formal: "bg-blue-100 text-blue-800 border-blue-200",
-      casual: "bg-green-100 text-green-800 border-green-200",
-      party: "bg-purple-100 text-purple-800 border-purple-200",
-      professional: "bg-gray-100 text-gray-800 border-gray-200",
-      wholesome: "bg-pink-100 text-pink-800 border-pink-200",
-      roast: "bg-orange-100 text-orange-800 border-orange-200"
-    };
-    return colors[tone as keyof typeof colors] || "bg-gray-100 text-gray-800 border-gray-200";
-  };
+
 
   const getToneLabel = (tone: string) => {
     const labels = {
@@ -413,17 +319,9 @@ export default function NewEventPage() {
     if (!user) return;
 
     try {
-      // TEMPORARILY DISABLED FIRESTORE - Just update local state
-      // Clean undefined values before updating
-      const cleanedEvent = cleanUndefinedValues(updatedEvent);
-      
-      // await eventService.updateEvent(cleanedEvent.id, cleanedEvent);
-      
-      // Store event data in localStorage for presentation page to access
-      localStorage.setItem('currentEvent', JSON.stringify(cleanedEvent));
-      
-      setEvent(cleanedEvent);
-      console.log("Event updated successfully (mock mode)");
+      await eventService.updateEvent(updatedEvent.id, cleanUndefinedValues(updatedEvent));
+      setEvent(updatedEvent);
+      console.log("Event updated successfully (Firestore mode)");
     } catch (error) {
       console.error("Error updating event:", error);
     }
@@ -431,9 +329,9 @@ export default function NewEventPage() {
 
   // Store initial event data in localStorage
   useEffect(() => {
-    if (event) {
-      localStorage.setItem('currentEvent', JSON.stringify(event));
-    }
+    // Optionally, only store in localStorage for presentation mode
+    // If you want to support offline presentation, you can keep this block
+    // For now, Firestore is the source of truth, so we remove this unless needed
   }, [event]);
 
   const handleEditKickoff = () => {
@@ -469,7 +367,7 @@ export default function NewEventPage() {
     const isPersonalFunFactsSegment = newSegment.title.toLowerCase().includes('personal fun fact') || 
                                      newSegment.title.toLowerCase().includes('fun fact');
     
-    let segmentsToAdd: EventSegment[] = [];
+    const segmentsToAdd: EventSegment[] = [];
     
     if (isPersonalFunFactsSegment && Object.keys(newSegment.personalFunFacts).length > 0) {
       const validFunFacts = Object.entries(newSegment.personalFunFacts).filter(([guestId, funFact]) => {
@@ -623,6 +521,24 @@ export default function NewEventPage() {
     }
   };
 
+  const handleAddSegmentFromAI = (segment: EventSegment) => {
+    if (!event) return;
+    
+    const newSegment: EventSegment = {
+      ...segment,
+      id: Date.now().toString(),
+      order: event.timeline.length + 1,
+      isCustom: true
+    };
+    
+    const updatedEvent: Event = {
+      ...event,
+      timeline: [...event.timeline, newSegment]
+    };
+    
+    handleEventUpdate(updatedEvent);
+  };
+
   const handleDeleteSegment = (segmentId: string) => {
     if (!event) return;
     const updatedEvent: Event = {
@@ -657,47 +573,31 @@ export default function NewEventPage() {
     setOpenMenuId(null);
   };
 
+  // Handle click outside dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDropdown]);
+
   const tabs: TabType[] = [
     { id: 'overview', label: 'Overview', icon: '📊' },
     { id: 'guests', label: 'Guests', icon: '👥' },
     { id: 'timeline', label: 'Event Program', icon: '⏰' },
-    { id: 'presentation', label: 'Start Presentation', icon: '🎬' }
+    { id: 'presentation', label: 'Presentation', icon: '🎬' }
   ];
 
-  const handleCreateNewEvent = () => {
-    // Logic to create a new event (e.g., clear out the form, generate a new ID)
-    if (!user) return;
-    const newEvent: Event = {
-      id: `evt-${Date.now()}`,
-      userId: user.uid,
-      name: "New Awesome Event",
-      type: "house",
-      date: new Date(),
-      startTime: "18:00",
-      duration: 180,
-      venue: "My Place",
-      tone: "casual",
-      guests: [],
-      timeline: [
-        {
-          id: "kickoff",
-          type: "welcome",
-          title: "Kick-off",
-          description: "Event starts",
-          duration: 0,
-          content: "Let the fun begin!",
-          order: 0,
-          isCustom: false,
-        },
-      ],
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    setUserEvents(prev => [...prev, newEvent]);
-    setEvent(newEvent);
-    setActiveTab('overview');
-  };
+
 
   const handleEventCreated = async (eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user) return;
@@ -791,15 +691,43 @@ export default function NewEventPage() {
     >
       <div className="min-h-screen bg-gradient-to-br from-deep-sea/5 via-white to-kimchi/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="flex justify-end items-center mb-8">
+      {/* Top Navigation Bar */}
+      <nav className="bg-white/80 backdrop-blur-xl border-b border-dark-royalty/10 px-6 py-4 relative">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center">
             <button
-              onClick={() => router.push('/')}
-              className="px-6 py-3 bg-white/70 backdrop-blur-xl text-dark-royalty rounded-xl border border-dark-royalty/20 hover:border-dark-royalty/40 hover:bg-white/90 transition-all duration-300 hover:scale-105 font-medium"
+              onClick={() => router.push('/ProfilePage')}
+              className="text-2xl font-bold text-dark-royalty hover:text-deep-sea transition-colors duration-300 cursor-pointer"
             >
-              ← Back to Home
+              AI Toastmaster
             </button>
           </div>
+          <div className="flex items-center space-x-4 relative" ref={dropdownRef}>
+            <button
+              onClick={() => setShowDropdown((prev) => !prev)}
+              className="w-10 h-10 bg-gradient-to-br from-dark-royalty to-deep-sea rounded-full flex items-center justify-center text-white font-semibold hover:scale-110 transition-all duration-300 shadow-lg"
+              title="Profile"
+            >
+              {user.email?.charAt(0).toUpperCase() || 'U'}
+            </button>
+            {showDropdown && (
+              <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-lg border border-dark-royalty/10 z-50">
+                <button
+                  onClick={async () => {
+                    setShowDropdown(false);
+                    const auth = getAuth();
+                    await signOut(auth);
+                    router.push("/");
+                  }}
+                  className="w-full text-left px-4 py-3 text-dark-royalty hover:bg-deep-sea/10 rounded-xl transition-colors"
+                >
+                  Log out
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </nav>
 
           {/* Tab Navigation */}
           <div className="mb-8">
@@ -807,10 +735,7 @@ export default function NewEventPage() {
               tabs={tabs}
               activeTab={activeTab}
               setActiveTab={setActiveTab as (id: TabType['id']) => void}
-              lastTab={lastTab}
               setLastTab={setLastTab as (id: TabType['id']) => void}
-              event={event}
-              router={router}
             />
           </div>
 
@@ -860,10 +785,13 @@ export default function NewEventPage() {
                   openMenuId={openMenuId}
                   setOpenMenuId={setOpenMenuId}
                   handleOpenPersonalFunfactModal={handleOpenPersonalFunfactModal}
+                  onAddSegment={handleAddSegmentFromAI}
                 />
               </DndContext>
             )}
-            {activeTab === 'presentation' && null}
+            {activeTab === 'presentation' && event && (
+              <PresentationPreview event={event} />
+            )}
           </div>
         </div>
 

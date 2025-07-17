@@ -7,7 +7,6 @@ import {
   getDocs, 
   query, 
   where, 
-  orderBy,
   serverTimestamp,
   onSnapshot
 } from "firebase/firestore";
@@ -15,6 +14,15 @@ import { db } from "../constants/firebaseConfig";
 import type { Event } from "../types/event";
 
 const EVENTS_COLLECTION = "events";
+
+// Helper to safely convert Firestore Timestamp, JS Date, or string to JS Date
+function toDateSafe(val: any): Date {
+  if (!val) return new Date();
+  if (val instanceof Date) return val;
+  if (typeof val.toDate === 'function') return val.toDate();
+  if (typeof val === 'string' || typeof val === 'number') return new Date(val);
+  return new Date();
+}
 
 export interface EventService {
   createEvent: (event: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>, userId: string) => Promise<string>;
@@ -86,9 +94,9 @@ export const eventService: EventService = {
         events.push({
           id: doc.id,
           ...data,
-          createdAt: data.createdAt?.toDate() || new Date(),
-          updatedAt: data.updatedAt?.toDate() || new Date(),
-          date: data.date?.toDate() || new Date(),
+          createdAt: toDateSafe(data.createdAt),
+          updatedAt: toDateSafe(data.updatedAt),
+          date: toDateSafe(data.date),
         } as Event);
       });
       
@@ -115,9 +123,9 @@ export const eventService: EventService = {
         events.push({
           id: doc.id,
           ...data,
-          createdAt: data.createdAt?.toDate() || new Date(),
-          updatedAt: data.updatedAt?.toDate() || new Date(),
-          date: data.date?.toDate() || new Date(),
+          createdAt: toDateSafe(data.createdAt),
+          updatedAt: toDateSafe(data.updatedAt),
+          date: toDateSafe(data.date),
         } as Event);
       });
       
@@ -144,9 +152,9 @@ export const eventService: EventService = {
       return {
         id: eventDoc.docs[0].id,
         ...data,
-        createdAt: data.createdAt?.toDate() || new Date(),
-        updatedAt: data.updatedAt?.toDate() || new Date(),
-        date: data.date?.toDate() || new Date(),
+        createdAt: toDateSafe(data.createdAt),
+        updatedAt: toDateSafe(data.updatedAt),
+        date: toDateSafe(data.date),
       } as Event;
     } catch (error) {
       console.error("Error getting event:", error);

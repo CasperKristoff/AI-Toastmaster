@@ -5,7 +5,7 @@ import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import app from "../constants/firebaseConfig";
 
 interface SignupFormProps {
-  onSignupSuccess?: (user: any) => void;
+  onSignupSuccess?: (user: unknown) => void;
 }
 
 export default function SignupForm({ onSignupSuccess }: SignupFormProps) {
@@ -25,8 +25,9 @@ export default function SignupForm({ onSignupSuccess }: SignupFormProps) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       setSuccess("Signup successful! You can now log in.");
       if (onSignupSuccess) onSignupSuccess(userCredential.user);
-    } catch (err: any) {
-      setError(err.message || "Signup failed");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Signup failed";
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

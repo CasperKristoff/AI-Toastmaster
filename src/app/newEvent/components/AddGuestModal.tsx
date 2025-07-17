@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Event, Guest } from '../../../types/event';
 
 interface AddGuestModalProps {
@@ -15,6 +15,14 @@ const AddGuestModal: React.FC<AddGuestModalProps> = ({
   onEventUpdate
 }) => {
   const [guestName, setGuestName] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus input when modal opens
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isOpen]);
 
   const handleAddGuest = (addAnother: boolean = false) => {
     if (!guestName.trim()) return;
@@ -72,6 +80,7 @@ const AddGuestModal: React.FC<AddGuestModalProps> = ({
               Name *
             </label>
             <input
+              ref={inputRef}
               type="text"
               value={guestName}
               onChange={(e) => setGuestName(e.target.value)}

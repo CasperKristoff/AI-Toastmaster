@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Event, Guest } from '../../../types/event';
+import { Event } from '../../../types/event';
 
 interface GuestsProps {
   event: Event;
@@ -47,16 +47,7 @@ const Guests: React.FC<GuestsProps> = ({
     setEditGuestName("");
   };
 
-  const handleUpdateGuest = (updatedGuest: Guest) => {
-    const updatedEvent: Event = {
-      ...event,
-      guests: event.guests.map(guest => 
-        guest.id === updatedGuest.id ? updatedGuest : guest
-      )
-    };
-    
-    onEventUpdate(updatedEvent);
-  };
+
 
   const handleDeleteGuest = (guestId: string) => {
     const updatedEvent: Event = {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import LoginForm from "../../components/LoginForm";
 
@@ -8,11 +9,12 @@ export default function LoginPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
 
-  // If user is already logged in, redirect to ProfilePage
-  if (user) {
-    router.push('/ProfilePage');
-    return null;
-  }
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (user && !loading) {
+      router.push('/ProfilePage');
+    }
+  }, [user, loading, router]);
 
   // Show loading while checking auth state
   if (loading) {
@@ -23,7 +25,12 @@ export default function LoginPage() {
     );
   }
 
-  const handleLoginSuccess = (user: any) => {
+  // Don't render login form if user is already logged in
+  if (user) {
+    return null;
+  }
+
+  const handleLoginSuccess = () => {
     router.push('/ProfilePage');
   };
 

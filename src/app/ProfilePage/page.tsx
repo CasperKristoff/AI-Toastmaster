@@ -2,14 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { User } from "firebase/auth";
 import { useAuth } from "../../hooks/useAuth";
-import LoginForm from "../../components/LoginForm";
-import SignupForm from "../../components/SignupForm";
 import EventCreationForm from "../newEvent/components/EventCreationForm";
 import { Event } from "../../types/event";
 import { eventService } from "../../services/eventService";
 import { getAuth, signOut } from "firebase/auth";
+import { FaTrash } from 'react-icons/fa';
+import { FaEllipsisH } from 'react-icons/fa';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -18,6 +17,7 @@ export default function ProfilePage() {
   const [userEvents, setUserEvents] = useState<Event[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showConfirm, setShowConfirm] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const isCreateMode = searchParams.get('create') === 'true';
 
@@ -27,28 +27,13 @@ export default function ProfilePage() {
       setEventsLoading(false);
       return;
     }
-    // TEMPORARILY DISABLED FIRESTORE - Using mock data
-    const mockEvents: Event[] = [
-      {
-        id: "mock-1",
-        userId: user.uid,
-        name: "House Party",
-        type: "house",
-        date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        startTime: "19:00",
-        duration: 120,
-        venue: "My Place",
-        tone: "casual",
-        guests: [],
-        timeline: [],
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ];
-    setUserEvents(mockEvents);
-    setEventsLoading(false);
-    return () => {};
+    // Subscribe to Firestore events for this user
+    setEventsLoading(true);
+    const unsubscribe = eventService.subscribeToUserEvents(user.uid, (events) => {
+      setUserEvents(events);
+      setEventsLoading(false);
+    });
+    return unsubscribe;
   }, [user]);
 
   // Handle click outside dropdown
@@ -68,12 +53,40 @@ export default function ProfilePage() {
     };
   }, [showDropdown]);
 
+  // Handle click outside delete confirmation menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      // Check if click is outside any delete confirmation menu
+      const deleteMenus = document.querySelectorAll('[data-delete-menu]');
+      let clickedInside = false;
+      
+      deleteMenus.forEach(menu => {
+        if (menu.contains(target)) {
+          clickedInside = true;
+        }
+      });
+      
+      if (!clickedInside) {
+        setShowConfirm(null);
+      }
+    };
+
+    if (showConfirm) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showConfirm]);
+
   const handleEventCreated = async (eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user) return;
     try {
-      const eventId = await eventService.createEvent(eventData, user.uid);
+      await eventService.createEvent(eventData, user.uid);
       router.push('/newEvent');
-    } catch (error) {
+    } catch {
       alert("Failed to create event. Please try again.");
     }
   };
@@ -98,7 +111,7 @@ export default function ProfilePage() {
               AI Toastmaster is a digital event companion designed to help organizers plan and execute unforgettable events using the power of generative AI. The platform supports everything from initial planning (guest list, tone, and event type) to real-time guidance during the event itself. It generates customized toasts, programs, games, and speech content based on user inputs, ensuring a smooth, entertaining, and personalized experience for guests.
             </p>
             <p className="text-lg text-deep-sea/90 mb-8 leading-relaxed">
-              Whether you're planning a wedding, birthday, corporate party, or surprise celebration, AI Toastmaster uses structured data, tone presets, and contextual guest profiles to build a unique flow for each event. During the event, the app transitions into a live mode—presenting content, leading activities, and acting as a virtual MC to guide the host and guests through each segment of the evening.
+              Whether you&apos;re planning a wedding, birthday, corporate party, or surprise celebration, AI Toastmaster uses structured data, tone presets, and contextual guest profiles to build a unique flow for each event. During the event, the app transitions into a live mode—presenting content, leading activities, and acting as a virtual MC to guide the host and guests through each segment of the evening.
             </p>
             <button
               onClick={() => router.push("/login")}
@@ -194,38 +207,79 @@ export default function ProfilePage() {
           <h3 className="text-xl font-semibold text-dark-royalty">Your Events</h3>
           {userEvents.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {userEvents.map((event) => (
+              <div className="space-y-4 max-w-2xl">
+                {userEvents.map((event) => {
+                  return (
                   <div
                     key={event.id}
-                    className="bg-white/80 backdrop-blur-xl rounded-xl p-6 border border-dark-royalty/10 shadow-lg transition-all duration-300 cursor-pointer hover:shadow-xl hover:scale-105 hover:border-dark-royalty/30"
+                    className="bg-white/90 backdrop-blur-xl rounded-xl border border-gray-200 shadow-sm transition-all duration-300 hover:shadow-md hover:border-dark-royalty/30 relative group cursor-pointer"
+                    style={{padding: '1rem 1.5rem'}}
                     onClick={() => router.push('/newEvent')}
                   >
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="text-2xl">
-                        {event.type === 'house' ? '🍻' : 
-                         event.type === 'bachelor' ? '🕺' : 
-                         event.type === 'theme' ? '🎭' : 
-                         event.type === 'roast' ? '🎂' : 
-                         event.type === 'prom' ? '👑' : 
-                         event.type === 'trivia' ? '🧠' : 
-                         event.type === 'glowup' ? '🔥' : 
-                         event.type === 'breakup' ? '💔' : '🎊'}
+                    {/* Delete Icon Button */}
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        setShowConfirm(event.id);
+                      }}
+                      className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors z-20 p-1.5 rounded-full hover:bg-gray-100 opacity-60 group-hover:opacity-100"
+                      title="More options"
+                    >
+                      <FaEllipsisH size={16} />
+                    </button>
+                    {/* Inline Confirm Delete */}
+                    {showConfirm === event.id && (
+                      <div 
+                        className="absolute top-10 right-3 bg-white border border-gray-200 rounded-lg shadow-lg z-30 min-w-[120px]"
+                        data-delete-menu
+                      >
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`Are you sure you want to delete "${event.name}"?`)) {
+                              try {
+                                await eventService.deleteEvent(event.id);
+                                setShowConfirm(null);
+                              } catch {
+                                alert('Failed to delete event.');
+                              }
+                            } else {
+                              setShowConfirm(null);
+                            }
+                          }}
+                          className="w-full text-left px-3 py-2 text-red-600 hover:bg-red-50 text-sm font-medium flex items-center space-x-2"
+                        >
+                          <FaTrash size={14} />
+                          <span>Delete</span>
+                        </button>
                       </div>
-                      <div className="text-sm text-deep-sea/60 font-medium capitalize">
-                        {event.type}
+                    )}
+                    {/* Card Content */}
+                    <div className="flex items-center space-x-3">
+                      <span className="text-2xl">
+                          {event.type === 'house' ? '🍻' : 
+                           event.type === 'bachelor' ? '🕺' : 
+                           event.type === 'theme' ? '🎭' : 
+                           event.type === 'roast' ? '🎂' : 
+                           event.type === 'prom' ? '👑' : 
+                           event.type === 'trivia' ? '🧠' : 
+                           event.type === 'glowup' ? '🔥' : 
+                           event.type === 'breakup' ? '💔' : '🎊'}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-lg font-semibold text-dark-royalty truncate">{event.name}</h4>
+                        <div className="flex items-center space-x-4 text-sm text-deep-sea/70">
+                          <span>{event.date.toLocaleDateString()} at {event.startTime}</span>
+                          <span>•</span>
+                          <span>{event.guests.length} guests</span>
+                          <span>•</span>
+                          <span>{event.timeline.length} segments</span>
+                        </div>
                       </div>
-                    </div>
-                    <h4 className="text-lg font-semibold text-dark-royalty mb-2">{event.name}</h4>
-                    <p className="text-deep-sea/70 text-sm mb-3">
-                      {event.date.toLocaleDateString()} at {event.startTime}
-                    </p>
-                    <div className="flex items-center justify-between text-xs text-deep-sea/60">
-                      <span>{event.guests.length} guests</span>
-                      <span>{event.timeline.length} segments</span>
                     </div>
                   </div>
-                ))}
+                );
+                })}
               </div>
               {/* Create New Event Button below events */}
               <div className="mt-8">
