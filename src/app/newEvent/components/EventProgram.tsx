@@ -1,6 +1,6 @@
 import React from 'react';
-import { Event, EventSegment, SegmentType } from '../types/event';
-import PersonalFunfact from './PersonalFunfact';
+import { Event, EventSegment, SegmentType } from '../../../types/event';
+import PersonalFunfact from '../sections/PersonalFunfact';
 import {
   DndContext,
   closestCenter,

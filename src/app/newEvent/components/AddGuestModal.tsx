@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Event, Guest } from '../types/event';
+import { Event, Guest } from '../../../types/event';
 
 interface AddGuestModalProps {
   isOpen: boolean;

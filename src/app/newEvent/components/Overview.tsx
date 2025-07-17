@@ -1,5 +1,5 @@
 import React from 'react';
-import { Event } from '../types/event';
+import { Event } from '../../../types/event';
 
 interface OverviewProps {
   event: Event;
