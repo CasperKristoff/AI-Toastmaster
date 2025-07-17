@@ -451,14 +451,6 @@ const EventProgram: React.FC<EventProgramProps> = ({
           )}
         </div>
 
-        {event.venue && (
-          <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-6 border-2 border-dark-royalty/10 mb-8 text-center">
-            <div className="text-3xl mb-3 animate-bounce">📍</div>
-            <h4 className="font-bold text-dark-royalty mb-2">Venue</h4>
-            <p className="text-deep-sea/70 font-medium">{event.venue}</p>
-          </div>
-        )}
-
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
