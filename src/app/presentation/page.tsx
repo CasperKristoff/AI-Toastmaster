@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Event, EventSegment } from "../../types/event";
+import { Event, Guest } from "../../types/event";
 import { eventService } from "../../services/eventService";
 import { useAuth } from "../../hooks/useAuth";
+import { SpinTheWheelPresentation } from "../newEvent/sections/SpinTheWheel";
 
 interface SlideData {
-  type: 'title' | 'segment' | 'closing' | 'funfact';
+  type: 'title' | 'segment' | 'closing' | 'funfact' | 'spinthewheel';
   title: string;
   subtitle?: string;
   description?: string;
@@ -19,6 +20,9 @@ interface SlideData {
   guestName?: string;
   guestId?: string;
   showAnswer?: boolean;
+  // Spin the wheel specific fields
+  challenge?: string;
+  guests?: Guest[];
 }
 
 export default function PresentationPage() {
@@ -28,7 +32,6 @@ export default function PresentationPage() {
   const [event, setEvent] = useState<Event | null>(null);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [showPresenterNotes, setShowPresenterNotes] = useState(false);
-  const [showControls, setShowControls] = useState(true);
   const [showExitModal, setShowExitModal] = useState(false);
   const [showFunFactAnswer, setShowFunFactAnswer] = useState(false);
 
@@ -47,67 +50,11 @@ export default function PresentationPage() {
 
     const fetchEvent = async () => {
       try {
-        // TEMPORARILY DISABLED FIRESTORE - Using localStorage data
-        // const eventData = await eventService.getEvent(eventId);
+        // Get event data from Firestore
+        const eventData = await eventService.getEvent(eventId);
         
-        // Get event data from localStorage (set by newEvent page)
-        const storedEventData = localStorage.getItem('currentEvent');
-        let mockEventData: Event;
-        
-        if (storedEventData) {
-          // Parse stored event data and convert date strings back to Date objects
-          mockEventData = JSON.parse(storedEventData);
-          mockEventData.date = new Date(mockEventData.date);
-          mockEventData.createdAt = new Date(mockEventData.createdAt);
-          mockEventData.updatedAt = new Date(mockEventData.updatedAt);
-          console.log("Using stored event data:", mockEventData);
-        } else {
-          // Fallback to mock data if no stored data
-          mockEventData = {
-            id: eventId,
-            userId: user.uid,
-            name: "Test Event Presentation",
-            type: "house",
-            date: new Date(),
-            startTime: "19:00",
-            duration: 120,
-            venue: "Test Venue",
-            tone: "casual",
-            guests: [
-              { id: "1", name: "Alice", relationship: "Friend" },
-              { id: "2", name: "Bob", relationship: "Colleague" }
-            ],
-            timeline: [
-              {
-                id: "1",
-                type: "welcome",
-                title: "Welcome & Greetings",
-                description: "Warm welcome to all guests",
-                duration: 15,
-                content: "Welcome everyone to our event!",
-                order: 1,
-                isCustom: false
-              },
-              {
-                id: "2", 
-                type: "activity",
-                title: "Ice Breaker Game",
-                description: "Fun activity to get everyone talking",
-                duration: 20,
-                content: "Let's play Two Truths and a Lie!",
-                order: 2,
-                isCustom: false
-              }
-            ],
-            isActive: true,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          };
-          console.log("Using fallback mock data:", mockEventData);
-        }
-
-        if (mockEventData) {
-          setEvent(mockEventData);
+        if (eventData) {
+          setEvent(eventData);
           setCurrentSlideIndex(startIndex);
         } else {
           router.push('/newEvent');
@@ -185,16 +132,30 @@ export default function PresentationPage() {
     });
 
     // Segment slides
-    event.timeline.forEach((segment, index) => {
-      slides.push({
-        type: 'segment',
-        title: segment.title,
-        subtitle: `${segment.duration} minutes`,
-        description: segment.description,
-        duration: segment.duration,
-        segmentType: segment.type,
-        speakerNotes: segment.content || `Notes for ${segment.title}`
-      });
+    event.timeline.forEach((segment) => {
+      // Special handling for Spin The Wheel segments
+      if (segment.type === 'game' && segment.title === 'Spin The Wheel') {
+        slides.push({
+          type: 'spinthewheel',
+          title: 'Spin The Wheel',
+          subtitle: `${segment.duration} minutes`,
+          description: segment.description,
+          duration: segment.duration,
+          challenge: segment.description,
+          guests: event.guests,
+          speakerNotes: `Challenge: ${segment.description}. Spin the wheel to randomly select a guest who must complete the challenge.`
+        });
+      } else {
+        slides.push({
+          type: 'segment',
+          title: segment.title,
+          subtitle: `${segment.duration} minutes`,
+          description: segment.description,
+          duration: segment.duration,
+          segmentType: segment.type,
+          speakerNotes: segment.content || `Notes for ${segment.title}`
+        });
+      }
 
       // Add fun fact slides for segments that have personal fun facts
       if (segment.personalFunFacts && Object.keys(segment.personalFunFacts).length > 0) {
@@ -255,6 +216,16 @@ export default function PresentationPage() {
           toggleFunFactAnswer();
         }
         break;
+      case 's':
+      case 'S':
+        if (currentSlide?.type === 'spinthewheel') {
+          // Trigger spin from parent component
+          const spinButton = document.querySelector('[data-spin-wheel]') as HTMLButtonElement;
+          if (spinButton && !spinButton.disabled) {
+            spinButton.click();
+          }
+        }
+        break;
     }
   }, [currentSlideIndex, currentSlide?.type]);
 
@@ -291,18 +262,14 @@ export default function PresentationPage() {
   const goToPreviousSlide = () => {
     if (currentSlideIndex > 0) {
       setCurrentSlideIndex(currentSlideIndex - 1);
-      setShowControls(true);
       setShowFunFactAnswer(false);
-      setTimeout(() => setShowControls(false), 3000);
     }
   };
 
   const goToNextSlide = () => {
     if (currentSlideIndex < slides.length - 1) {
       setCurrentSlideIndex(currentSlideIndex + 1);
-      setShowControls(true);
       setShowFunFactAnswer(false);
-      setTimeout(() => setShowControls(false), 3000);
     }
   };
 
@@ -324,11 +291,7 @@ export default function PresentationPage() {
     return () => document.removeEventListener('keydown', handleKeyPress);
   }, [handleKeyPress]);
 
-  // Auto-hide controls
-  useEffect(() => {
-    const timer = setTimeout(() => setShowControls(false), 3000);
-    return () => clearTimeout(timer);
-  }, [currentSlideIndex]);
+
 
   // Loading state
   if (loading || !event) {
@@ -367,7 +330,6 @@ export default function PresentationPage() {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      onClick={() => setShowControls(true)}
     >
       {/* Main Slide Content */}
       <div className="h-full flex flex-col items-center justify-center p-8 relative">
@@ -396,7 +358,7 @@ export default function PresentationPage() {
               {/* Fun Fact Display */}
               <div className="bg-white/30 backdrop-blur-sm rounded-2xl p-8 border border-dark-royalty/20">
                 <p className="text-2xl text-dark-royalty font-medium leading-relaxed">
-                  "{currentSlide.funFact}"
+                  &quot;{currentSlide.funFact}&quot;
                 </p>
               </div>
 
@@ -429,6 +391,14 @@ export default function PresentationPage() {
               </div>
             </div>
           )}
+
+          {/* Spin The Wheel specific content */}
+          {currentSlide.type === 'spinthewheel' && (
+            <SpinTheWheelPresentation
+              challenge={currentSlide.challenge || ''}
+              guests={currentSlide.guests || []}
+            />
+          )}
         </div>
 
         {/* Presenter Notes Overlay */}
@@ -448,73 +418,48 @@ export default function PresentationPage() {
         )}
       </div>
 
-      {/* Navigation Controls */}
-      {showControls && (
-        <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-dark-royalty/20 p-4">
-          <div className="flex items-center justify-between max-w-4xl mx-auto">
-            {/* Previous Button */}
-            <button
-              onClick={goToPreviousSlide}
-              disabled={currentSlideIndex === 0}
-              className="px-6 py-3 bg-white/50 text-dark-royalty rounded-xl hover:bg-white/70 transition-all duration-300 font-medium border border-dark-royalty/20 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              ← Previous
-            </button>
+      {/* Slick Navigation Arrows */}
+      <div className="absolute inset-0 pointer-events-none">
+        {/* Previous Arrow */}
+        <button
+          onClick={goToPreviousSlide}
+          disabled={currentSlideIndex === 0}
+          className={`absolute left-4 top-1/2 transform -translate-y-1/2 pointer-events-auto transition-all duration-300 ${
+            currentSlideIndex === 0 
+              ? 'text-gray-300 cursor-not-allowed' 
+              : 'text-gray-500 hover:text-gray-700 hover:scale-110'
+          }`}
+        >
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+        </button>
 
-            {/* Progress Indicator */}
-            <div className="flex space-x-2">
-              {slides.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentSlideIndex(index)}
-                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                    index === currentSlideIndex 
-                      ? 'bg-dark-royalty' 
-                      : 'bg-deep-sea/30 hover:bg-deep-sea/50'
-                  }`}
-                />
-              ))}
-            </div>
+        {/* Next Arrow */}
+        <button
+          onClick={goToNextSlide}
+          disabled={currentSlideIndex === slides.length - 1}
+          className={`absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-auto transition-all duration-300 ${
+            currentSlideIndex === slides.length - 1 
+              ? 'text-gray-300 cursor-not-allowed' 
+              : 'text-gray-500 hover:text-gray-700 hover:scale-110'
+          }`}
+        >
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </button>
 
-            {/* Next Button */}
-            <button
-              onClick={goToNextSlide}
-              disabled={currentSlideIndex === slides.length - 1}
-              className="px-6 py-3 bg-dark-royalty text-white rounded-xl hover:bg-dark-royalty/90 transition-all duration-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next →
-            </button>
-          </div>
-
-          {/* Additional Controls */}
-          <div className="flex justify-center space-x-4 mt-2">
-            <button
-              onClick={togglePresenterNotes}
-              className="px-4 py-2 bg-white/50 text-dark-royalty rounded-lg hover:bg-white/70 transition-all duration-300 text-sm font-medium border border-dark-royalty/20"
-            >
-              {showPresenterNotes ? 'Hide' : 'Show'} Notes (N)
-            </button>
-            {currentSlide.type === 'funfact' && (
-              <button
-                onClick={toggleFunFactAnswer}
-                className={`px-4 py-2 rounded-lg transition-all duration-300 text-sm font-medium border ${
-                  showFunFactAnswer 
-                    ? 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20 hover:bg-yellow-500/20' 
-                    : 'bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20'
-                }`}
-              >
-                {showFunFactAnswer ? 'Hide' : 'Reveal'} Answer (R)
-              </button>
-            )}
-            <button
-              onClick={() => setShowExitModal(true)}
-              className="px-4 py-2 bg-red-500/10 text-red-600 rounded-lg hover:bg-red-500/20 transition-all duration-300 text-sm font-medium border border-red-500/20"
-            >
-              Exit (Esc)
-            </button>
-          </div>
-        </div>
-      )}
+        {/* Exit Button */}
+        <button
+          onClick={() => setShowExitModal(true)}
+          className="absolute top-4 right-4 pointer-events-auto text-gray-500 hover:text-gray-700 hover:scale-110 transition-all duration-300"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
 
       {/* Exit Confirmation Modal */}
       {showExitModal && (

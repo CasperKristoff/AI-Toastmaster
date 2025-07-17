@@ -1,19 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Event, EventSegment, SegmentType } from '../../../types/event';
 import PersonalFunfact from '../sections/PersonalFunfact';
+import AISegments from '../sections/AISegments';
 import {
   DndContext,
   closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
   DragEndEvent,
 } from '@dnd-kit/core';
 import {
-  arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import {
@@ -313,13 +308,13 @@ interface EventProgramProps {
   openMenuId: string | null;
   setOpenMenuId: (id: string | null) => void;
   handleOpenPersonalFunfactModal: () => void;
+  onAddSegment: (segment: EventSegment) => void;
 }
 
 const EventProgram: React.FC<EventProgramProps> = ({
   event,
   setShowAddSegmentModal,
   editingKickoff,
-  setEditingKickoff,
   editKickoffTime,
   setEditKickoffTime,
   handleEditKickoff,
@@ -342,8 +337,9 @@ const EventProgram: React.FC<EventProgramProps> = ({
   handleDeleteSegment,
   openMenuId,
   setOpenMenuId,
-  handleOpenPersonalFunfactModal
+  onAddSegment
 }) => {
+  const [showAISegmentsModal, setShowAISegmentsModal] = useState(false);
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
@@ -488,21 +484,14 @@ const EventProgram: React.FC<EventProgramProps> = ({
             >
               + Add Segment
             </button>
-            {event.guests.length > 0 && (
-              <button 
-                onClick={handleOpenPersonalFunfactModal}
-                className="px-6 py-3 bg-gradient-to-r from-kimchi/80 to-deep-sea/80 text-white rounded-xl hover:from-kimchi/90 hover:to-deep-sea/90 transition-all duration-300 font-medium flex items-center space-x-2"
-              >
-                <span>👥</span>
-                <span>Add Personal Fun Facts</span>
-              </button>
-            )}
+            <button 
+              onClick={() => setShowAISegmentsModal(true)}
+              className="px-6 py-3 bg-gradient-to-r from-kimchi/80 to-deep-sea/80 text-white rounded-xl hover:from-kimchi/90 hover:to-deep-sea/90 transition-all duration-300 font-medium flex items-center space-x-2"
+            >
+              <span>🤖</span>
+              <span>AI Recommended Segments</span>
+            </button>
           </div>
-          {event.guests.length === 0 && (
-            <div className="text-sm text-deep-sea/60 italic">
-              💡 Add guests first to create Personal Fun Facts
-            </div>
-          )}
         </div>
 
         <div className="absolute bottom-4 right-4 flex space-x-2">
@@ -511,6 +500,14 @@ const EventProgram: React.FC<EventProgramProps> = ({
           <div className="w-3 h-3 bg-dark-royalty/30 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
         </div>
       </div>
+
+      {/* AISegments Modal */}
+      <AISegments
+        event={event}
+        isOpen={showAISegmentsModal}
+        onClose={() => setShowAISegmentsModal(false)}
+        onAddSegment={onAddSegment}
+      />
     </div>
   );
 };
