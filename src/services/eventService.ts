@@ -16,6 +16,7 @@ import type { Event } from "../types/event";
 const EVENTS_COLLECTION = "events";
 
 // Helper to safely convert Firestore Timestamp, JS Date, or string to JS Date
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function toDateSafe(val: any): Date {
   if (!val) return new Date();
   if (val instanceof Date) return val;

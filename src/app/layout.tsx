@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Juvo PDF Processing",
   description: "Professional PDF processing solution by Juvo",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

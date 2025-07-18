@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../hooks/useAuth";
 import EventCreationForm from "../newEvent/components/EventCreationForm";
@@ -10,7 +10,7 @@ import { getAuth, signOut } from "firebase/auth";
 import { FaTrash } from 'react-icons/fa';
 import { FaEllipsisH } from 'react-icons/fa';
 
-export default function ProfilePage() {
+function ProfilePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading } = useAuth();
@@ -309,4 +309,20 @@ export default function ProfilePage() {
       </div>
     </div>
   );
-} 
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-deep-sea/5 via-white to-kimchi/5 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4 animate-bounce">🎬</div>
+          <h2 className="text-2xl font-bold text-dark-royalty mb-2">Loading...</h2>
+          <p className="text-deep-sea/70">Getting your profile ready</p>
+        </div>
+      </div>
+    }>
+      <ProfilePageContent />
+    </Suspense>
+  );
+}

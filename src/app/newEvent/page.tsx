@@ -1,19 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../hooks/useAuth";
-import { getAuth, signOut } from "firebase/auth";
-import { Event, EventSegment, SegmentType } from "../../types/event";
+import { Event } from "../../types/event";
 import { eventService } from "../../services/eventService";
-import EventCreationForm from "./components/EventCreationForm";
-import PersonalFunfact from "./sections/PersonalFunfact";
-import Overview from "./components/Overview";
-import Guests from "./components/Guests";
-import EventProgram from "./components/EventProgram";
-import AddGuestModal from "./components/AddGuestModal"; 
-import AddSegmentModal from "./sections/AddSegmentModal";
-import PresentationPreview from "./components/PresentationPreview";
 import {
   DndContext,
   closestCenter,
@@ -27,10 +18,22 @@ import {
   arrayMove,
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
+import EventCreationForm from "./components/EventCreationForm";
+import Overview from "./components/Overview";
+import Guests from "./components/Guests";
+import AddGuestModal from "./components/AddGuestModal";
+import PresentationPreview from "../presentation/components/PresentationPreview";
+import EventProgram from "../EventProgram/components/sections/EventProgram";
+import { formatTime, formatDate, getEventTypeIcon, getEventTypeLabel, getToneLabel } from "../EventProgram/components/sections/EventUtils";
+import { useEventHandlers } from "../EventProgram/components/sections/EventHandlers";
+import AddSegmentModal from "../EventProgram/components/sections/AddSegmentModal";
+import PersonalFunfact from "../EventProgram/components/PersonalFunfact";
+import AISegments from "../EventProgram/components/sections/AISegments";
+import SpinTheWheel from "../EventProgram/components/SpinTheWheel";
+import SlideShow from "../EventProgram/components/SlideShow";
+import Jeopardy from "../EventProgram/components/Jeopardy";
 
 type TabType = { id: 'overview' | 'guests' | 'timeline' | 'presentation'; label: string; icon: string };
-
-
 
 function SectionTabs({ tabs, activeTab, setActiveTab, setLastTab }: {
   tabs: TabType[];
@@ -165,46 +168,15 @@ function SectionTabs({ tabs, activeTab, setActiveTab, setLastTab }: {
   );
 }
 
-export default function NewEventPage() {
+function NewEventPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading } = useAuth();
   const [event, setEvent] = useState<Event | null>(null);
-
-
   const [eventsLoading, setEventsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'guests' | 'timeline' | 'presentation'>('overview');
-  const [showAddGuestModal, setShowAddGuestModal] = useState(false);
-  const [editingKickoff, setEditingKickoff] = useState(false);
-  const [editKickoffTime, setEditKickoffTime] = useState("");
-  const [showAddSegmentModal, setShowAddSegmentModal] = useState(false);
-  const [showPersonalFunfactModal, setShowPersonalFunfactModal] = useState(false);
-  const [newSegment, setNewSegment] = useState({
-    title: "",
-    description: "",
-    duration: "",
-    type: "activity" as SegmentType,
-    personalFunFacts: {} as Record<string, string>
-  });
-  const [editingSegment, setEditingSegment] = useState<string | null>(null);
-  const [editSegment, setEditSegment] = useState<{
-    title: string;
-    description: string;
-    duration: string;
-    type: SegmentType;
-    personalFunFacts: Record<string, string>;
-  }>({
-    title: "",
-    description: "",
-    duration: "",
-    type: "activity",
-    personalFunFacts: {}
-  });
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [, setLastTab] = useState<'overview' | 'guests' | 'timeline' | 'presentation'>('overview');
-  const [showDropdown, setShowDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
+  
   // Sensors for drag and drop
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -212,6 +184,9 @@ export default function NewEventPage() {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+  
+  // Use the consolidated EventHandlers hook
+  const eventHandlers = useEventHandlers({ user, event, setEvent });
 
   // Subscribe to user events when authenticated
   useEffect(() => {
@@ -240,315 +215,6 @@ export default function NewEventPage() {
     return unsubscribe;
   }, [user, loading, router]);
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }).format(date);
-  };
-
-  const formatTime = (time: string) => {
-    return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
-  const getEventTypeIcon = (type: string) => {
-    const icons = {
-      bachelor: "🕺",
-      theme: "🎭",
-      house: "🍻",
-      roast: "🎂",
-      prom: "👑",
-      trivia: "🧠",
-      glowup: "🔥",
-      breakup: "💔"
-    };
-    return icons[type as keyof typeof icons] || "🎊";
-  };
-
-  const getEventTypeLabel = (type: string) => {
-    const labels = {
-      bachelor: "Bachelor(ette) Party",
-      theme: "Theme Party",
-      house: "House Party",
-      roast: "Roast Night",
-      prom: "Prom or Formal",
-      trivia: "Trivia Night",
-      glowup: "Glow-Up Party",
-      breakup: "Breakup Bash"
-    };
-    return labels[type as keyof typeof labels] || "Event";
-  };
-
-
-
-  const getToneLabel = (tone: string) => {
-    const labels = {
-      formal: "Formal & Elegant",
-      casual: "Casual & Relaxed",
-      party: "High Energy Party",
-      professional: "Professional",
-      wholesome: "Family-Friendly",
-      roast: "Playful & Humorous"
-    };
-    return labels[tone as keyof typeof labels] || tone;
-  };
-
-  // Utility function to remove undefined values from objects
-  const cleanUndefinedValues = (obj: any): any => {
-    if (obj === null || obj === undefined) return obj;
-    if (typeof obj !== 'object') return obj;
-    if (obj instanceof Date) return obj; // Preserve Date objects
-    if (Array.isArray(obj)) return obj.map(cleanUndefinedValues);
-    
-    const cleaned: any = {};
-    for (const [key, value] of Object.entries(obj)) {
-      if (value !== undefined) {
-        cleaned[key] = cleanUndefinedValues(value);
-      }
-    }
-    return cleaned;
-  };
-
-  const handleEventUpdate = async (updatedEvent: Event) => {
-    if (!user) return;
-
-    try {
-      await eventService.updateEvent(updatedEvent.id, cleanUndefinedValues(updatedEvent));
-      setEvent(updatedEvent);
-      console.log("Event updated successfully (Firestore mode)");
-    } catch (error) {
-      console.error("Error updating event:", error);
-    }
-  };
-
-  // Store initial event data in localStorage
-  useEffect(() => {
-    // Optionally, only store in localStorage for presentation mode
-    // If you want to support offline presentation, you can keep this block
-    // For now, Firestore is the source of truth, so we remove this unless needed
-  }, [event]);
-
-  const handleEditKickoff = () => {
-    if (!event) return;
-    setEditingKickoff(true);
-    setEditKickoffTime(event.startTime);
-  };
-
-  const handleSaveKickoff = () => {
-    if (editKickoffTime && event) {
-      const updatedEvent: Event = {
-        ...event,
-        startTime: editKickoffTime
-      };
-      
-      handleEventUpdate(updatedEvent);
-      
-      setEditingKickoff(false);
-      setEditKickoffTime("");
-    }
-  };
-
-  const handleCancelKickoff = () => {
-    setEditingKickoff(false);
-    setEditKickoffTime("");
-  };
-
-  const handleAddSegment = () => {
-    if (!event || !newSegment.title || !newSegment.duration || isNaN(Number(newSegment.duration)) || Number(newSegment.duration) <= 0) {
-      return;
-    }
-
-    const isPersonalFunFactsSegment = newSegment.title.toLowerCase().includes('personal fun fact') || 
-                                     newSegment.title.toLowerCase().includes('fun fact');
-    
-    const segmentsToAdd: EventSegment[] = [];
-    
-    if (isPersonalFunFactsSegment && Object.keys(newSegment.personalFunFacts).length > 0) {
-      const validFunFacts = Object.entries(newSegment.personalFunFacts).filter(([guestId, funFact]) => {
-        const guest = event.guests.find(g => g.id === guestId);
-        return guest && funFact && funFact.trim() !== "";
-      });
-      
-      if (validFunFacts.length > 0) {
-        const totalDuration = validFunFacts.length * 2;
-        
-        const segment: EventSegment = {
-          id: Date.now().toString(),
-          type: "game" as SegmentType,
-          title: "Personal Fun Facts",
-          description: `Guess who each fun fact belongs to!`,
-          duration: totalDuration,
-          content: `Each fun fact will be shown individually. Give guests time to discuss and guess before revealing each answer.`,
-          order: event.timeline.length + 1,
-          isCustom: true,
-          personalFunFacts: newSegment.personalFunFacts
-        };
-        segmentsToAdd.push(segment);
-      }
-    } else {
-      const segment: EventSegment = {
-        id: Date.now().toString(),
-        type: newSegment.type,
-        title: newSegment.title,
-        description: newSegment.description || "",
-        duration: Number(newSegment.duration),
-        content: "",
-        order: event.timeline.length + 1,
-        isCustom: true,
-        ...(Object.keys(newSegment.personalFunFacts).length > 0 && { personalFunFacts: newSegment.personalFunFacts })
-      };
-      segmentsToAdd.push(segment);
-    }
-    
-    const updatedEvent: Event = {
-      ...event,
-      timeline: [...event.timeline, ...segmentsToAdd]
-    };
-    
-    handleEventUpdate(updatedEvent);
-    
-    setNewSegment({
-      title: "",
-      description: "",
-      duration: "",
-      type: "activity",
-      personalFunFacts: {}
-    });
-    
-    setShowAddSegmentModal(false);
-  };
-
-  const handleEditSegment = (segmentId: string) => {
-    if (!event) return;
-    const segment = event.timeline.find(s => s.id === segmentId);
-    if (segment) {
-      setEditingSegment(segmentId);
-      setEditSegment({
-        title: segment.title,
-        description: segment.description,
-        duration: segment.duration.toString(),
-        type: segment.type,
-        personalFunFacts: segment.personalFunFacts || {}
-      });
-    }
-  };
-
-  const handleSaveSegmentEdit = (segmentId: string) => {
-    if (!event || !editSegment.title || !editSegment.duration || isNaN(Number(editSegment.duration)) || Number(editSegment.duration) <= 0) {
-      return;
-    }
-
-    const updatedEvent: Event = {
-      ...event,
-      timeline: event.timeline.map(segment => 
-        segment.id === segmentId 
-          ? { 
-              ...segment, 
-              title: editSegment.title,
-              description: editSegment.description || "",
-              duration: Number(editSegment.duration),
-              type: editSegment.type,
-              ...(Object.keys(editSegment.personalFunFacts).length > 0 && { personalFunFacts: editSegment.personalFunFacts })
-            }
-          : segment
-      )
-    };
-    
-    handleEventUpdate(updatedEvent);
-    
-    setEditingSegment(null);
-    setEditSegment({
-      title: "",
-      description: "",
-      duration: "",
-      type: "activity",
-      personalFunFacts: {}
-    });
-  };
-
-  const handleCancelSegmentEdit = () => {
-    setEditingSegment(null);
-    setEditSegment({
-      title: "",
-      description: "",
-      duration: "",
-      type: "activity",
-      personalFunFacts: {}
-    });
-  };
-
-  const handleOpenPersonalFunfactModal = () => {
-    setShowPersonalFunfactModal(true);
-  };
-
-  const handleSavePersonalFunfacts = (funFacts: Record<string, string>) => {
-    if (!event || Object.keys(funFacts).length === 0) {
-      return;
-    }
-
-    const validFunFacts = Object.entries(funFacts).filter(([guestId, funFact]) => {
-      const guest = event.guests.find(g => g.id === guestId);
-      return guest && funFact && funFact.trim() !== "";
-    });
-    
-    if (validFunFacts.length > 0) {
-      const totalDuration = validFunFacts.length * 2;
-      
-      const segment: EventSegment = {
-        id: Date.now().toString(),
-        type: "game" as SegmentType,
-        title: "Personal Fun Facts",
-        description: `Guess who each fun fact belongs to!`,
-        duration: totalDuration,
-        content: `Each fun fact will be shown individually. Give guests time to discuss and guess before revealing each answer.`,
-        order: event.timeline.length + 1,
-        isCustom: true,
-        personalFunFacts: funFacts
-      };
-      
-      const updatedEvent: Event = {
-        ...event,
-        timeline: [...event.timeline, segment]
-      };
-      
-      handleEventUpdate(updatedEvent);
-    }
-  };
-
-  const handleAddSegmentFromAI = (segment: EventSegment) => {
-    if (!event) return;
-    
-    const newSegment: EventSegment = {
-      ...segment,
-      id: Date.now().toString(),
-      order: event.timeline.length + 1,
-      isCustom: true
-    };
-    
-    const updatedEvent: Event = {
-      ...event,
-      timeline: [...event.timeline, newSegment]
-    };
-    
-    handleEventUpdate(updatedEvent);
-  };
-
-  const handleDeleteSegment = (segmentId: string) => {
-    if (!event) return;
-    const updatedEvent: Event = {
-      ...event,
-      timeline: event.timeline.filter(segment => segment.id !== segmentId)
-    };
-    
-    handleEventUpdate(updatedEvent);
-  };
-
   const handleDragEnd = (dragEvent: DragEndEvent) => {
     if (!event) return;
     const { active, over } = dragEvent;
@@ -564,31 +230,10 @@ export default function NewEventPage() {
           timeline: updatedTimeline
         };
         
-        handleEventUpdate(updatedEvent);
+        eventHandlers.handleEventUpdate(updatedEvent);
       }
     }
   };
-
-  const handleClickOutside = () => {
-    setOpenMenuId(null);
-  };
-
-  // Handle click outside dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowDropdown(false);
-      }
-    };
-
-    if (showDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showDropdown]);
 
   const tabs: TabType[] = [
     { id: 'overview', label: 'Overview', icon: '📊' },
@@ -596,8 +241,6 @@ export default function NewEventPage() {
     { id: 'timeline', label: 'Event Program', icon: '⏰' },
     { id: 'presentation', label: 'Presentation', icon: '🎬' }
   ];
-
-
 
   const handleEventCreated = async (eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user) return;
@@ -684,15 +327,10 @@ export default function NewEventPage() {
   }
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
       <div className="min-h-screen bg-gradient-to-br from-deep-sea/5 via-white to-kimchi/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Top Navigation Bar */}
-      <nav className="bg-white/80 backdrop-blur-xl border-b border-dark-royalty/10 px-6 py-4 relative">
+        <nav className="bg-white/80 backdrop-blur-xl border-b border-dark-royalty/10 px-6 py-4 relative mb-8">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center">
             <button
@@ -701,30 +339,6 @@ export default function NewEventPage() {
             >
               AI Toastmaster
             </button>
-          </div>
-          <div className="flex items-center space-x-4 relative" ref={dropdownRef}>
-            <button
-              onClick={() => setShowDropdown((prev) => !prev)}
-              className="w-10 h-10 bg-gradient-to-br from-dark-royalty to-deep-sea rounded-full flex items-center justify-center text-white font-semibold hover:scale-110 transition-all duration-300 shadow-lg"
-              title="Profile"
-            >
-              {user.email?.charAt(0).toUpperCase() || 'U'}
-            </button>
-            {showDropdown && (
-              <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-lg border border-dark-royalty/10 z-50">
-                <button
-                  onClick={async () => {
-                    setShowDropdown(false);
-                    const auth = getAuth();
-                    await signOut(auth);
-                    router.push("/");
-                  }}
-                  className="w-full text-left px-4 py-3 text-dark-royalty hover:bg-deep-sea/10 rounded-xl transition-colors"
-                >
-                  Log out
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </nav>
@@ -747,8 +361,10 @@ export default function NewEventPage() {
             {activeTab === 'guests' && event && (
               <Guests
                 event={event}
-                onEventUpdate={handleEventUpdate}
-                setShowAddGuestModal={setShowAddGuestModal}
+                onEventUpdate={(updatedEvent) => {
+                  setEvent(updatedEvent);
+                }}
+                setShowAddGuestModal={eventHandlers.setShowAddGuestModal}
               />
             )}
             {activeTab === 'timeline' && event && (
@@ -759,33 +375,27 @@ export default function NewEventPage() {
               >
                 <EventProgram
                   event={event}
-                  setShowAddSegmentModal={setShowAddSegmentModal}
-                  editingKickoff={editingKickoff}
-                  setEditingKickoff={setEditingKickoff}
-                  editKickoffTime={editKickoffTime}
-                  setEditKickoffTime={setEditKickoffTime}
-                  handleEditKickoff={handleEditKickoff}
-                  handleSaveKickoff={handleSaveKickoff}
-                  handleCancelKickoff={handleCancelKickoff}
+                  setShowAddSegmentModal={eventHandlers.setShowAddSegmentModal}
+                  editingKickoff={eventHandlers.editingKickoff}
+                  setEditingKickoff={eventHandlers.setEditingKickoff}
+                  editKickoffTime={eventHandlers.editKickoffTime}
+                  setEditKickoffTime={eventHandlers.setEditKickoffTime}
+                  handleEditKickoff={eventHandlers.handleEditKickoff}
+                  handleSaveKickoff={eventHandlers.handleSaveKickoff}
+                  handleCancelKickoff={eventHandlers.handleCancelKickoff}
                   formatTime={formatTime}
                   formatDate={formatDate}
                   getEventTypeIcon={getEventTypeIcon}
                   getEventTypeLabel={getEventTypeLabel}
                   getToneLabel={getToneLabel}
-                  handleClickOutside={handleClickOutside}
+                  handleClickOutside={eventHandlers.handleClickOutside}
                   sensors={sensors}
                   handleDragEnd={handleDragEnd}
-                  editingSegment={editingSegment}
-                  editSegment={editSegment}
-                  setEditSegment={setEditSegment}
-                  handleEditSegment={handleEditSegment}
-                  handleSaveSegmentEdit={handleSaveSegmentEdit}
-                  handleCancelSegmentEdit={handleCancelSegmentEdit}
-                  handleDeleteSegment={handleDeleteSegment}
-                  openMenuId={openMenuId}
-                  setOpenMenuId={setOpenMenuId}
-                  handleOpenPersonalFunfactModal={handleOpenPersonalFunfactModal}
-                  onAddSegment={handleAddSegmentFromAI}
+                  handleEditSegment={eventHandlers.handleEditSegment}
+                  handleDeleteSegment={eventHandlers.handleDeleteSegment}
+                  openMenuId={eventHandlers.openMenuId}
+                  setOpenMenuId={eventHandlers.setOpenMenuId}
+                  onAddSegment={eventHandlers.handleAddSegmentFromAI}
                 />
               </DndContext>
             )}
@@ -798,32 +408,113 @@ export default function NewEventPage() {
         {/* Add Guest Modal */}
         {event && (
           <AddGuestModal
-            isOpen={showAddGuestModal}
-            onClose={() => setShowAddGuestModal(false)}
+            isOpen={eventHandlers.showAddGuestModal}
+            onClose={() => eventHandlers.setShowAddGuestModal(false)}
             event={event}
-            onEventUpdate={handleEventUpdate}
+          onEventUpdate={(updatedEvent) => setEvent(updatedEvent)}
           />
         )}
         
+      {/* EventProgram Modals */}
+      {event && (
+        <>
         {/* Add Segment Modal */}
         <AddSegmentModal
-          isOpen={showAddSegmentModal}
-          onClose={() => setShowAddSegmentModal(false)}
-          newSegment={newSegment}
-          setNewSegment={setNewSegment}
-          onAddSegment={handleAddSegment}
+          isOpen={eventHandlers.showAddSegmentModal}
+            onClose={() => {
+              eventHandlers.setShowAddSegmentModal(false);
+              eventHandlers.setSegmentToEdit(null);
+            }}
+          newSegment={eventHandlers.newSegment}
+          setNewSegment={eventHandlers.setNewSegment}
+          onAddSegment={eventHandlers.handleAddSegment}
+            isEditing={!!eventHandlers.segmentToEdit}
+            segmentToEdit={eventHandlers.segmentToEdit}
+            onSaveEdit={eventHandlers.handleSaveSegmentEdit}
         />
 
         {/* Personal Fun Facts Modal */}
         <PersonalFunfact
           isModal={true}
-          isOpen={showPersonalFunfactModal}
-          onClose={() => setShowPersonalFunfactModal(false)}
+          isOpen={eventHandlers.showPersonalFunfactModal}
+          onClose={() => eventHandlers.setShowPersonalFunfactModal(false)}
           guests={event?.guests || []}
-          funFacts={newSegment.personalFunFacts}
-          onFunFactsChange={handleSavePersonalFunfacts}
+          funFacts={eventHandlers.newSegment.personalFunFacts}
+          onFunFactsChange={eventHandlers.handleSavePersonalFunfacts}
         />
+
+          {/* Specialized Edit Modals */}
+          <PersonalFunfact
+            isModal={true}
+            isOpen={eventHandlers.showPersonalFunfactEditModal}
+            onClose={() => {
+              eventHandlers.setShowPersonalFunfactEditModal(false);
+              eventHandlers.setSegmentToEdit(null);
+            }}
+            guests={event?.guests || []}
+            funFacts={eventHandlers.segmentToEdit?.personalFunFacts || {}}
+            onFunFactsChange={eventHandlers.handleSavePersonalFunfactsEdit}
+          />
+
+          <SpinTheWheel
+            guests={event?.guests || []}
+            isOpen={eventHandlers.showSpinTheWheelEditModal}
+            onClose={() => {
+              eventHandlers.setShowSpinTheWheelEditModal(false);
+              eventHandlers.setSegmentToEdit(null);
+            }}
+            onSave={eventHandlers.handleSaveSpinTheWheelEdit}
+            initialChallenge={eventHandlers.segmentToEdit?.description || ''}
+          />
+
+          <SlideShow
+            event={event}
+            isOpen={eventHandlers.showSlideShowEditModal}
+            onClose={() => {
+              eventHandlers.setShowSlideShowEditModal(false);
+              eventHandlers.setSegmentToEdit(null);
+            }}
+            onSave={eventHandlers.handleSaveSlideShowEdit}
+            initialSegment={eventHandlers.segmentToEdit || undefined}
+          />
+
+          {/* AISegments Modal */}
+          <AISegments
+            event={event}
+            isOpen={false}
+            onClose={() => {}}
+            onAddSegment={eventHandlers.handleAddSegmentFromAI}
+          />
+
+          {/* Jeopardy Modal */}
+          <Jeopardy
+            event={event}
+            isOpen={eventHandlers.showJeopardyEditModal}
+            onClose={() => {
+              eventHandlers.setShowJeopardyEditModal(false);
+              eventHandlers.setSegmentToEdit(null);
+            }}
+            onSave={eventHandlers.handleSaveJeopardyEdit}
+            initialSegment={eventHandlers.segmentToEdit || undefined}
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
+export default function NewEventPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-deep-sea/5 via-white to-kimchi/5 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4 animate-bounce">🎬</div>
+          <h2 className="text-2xl font-bold text-dark-royalty mb-2">Loading Event Dashboard...</h2>
+          <p className="text-deep-sea/70">Getting your events ready</p>
+        </div>
       </div>
-    </DndContext>
+    }>
+      <NewEventPageContent />
+    </Suspense>
   );
 } 

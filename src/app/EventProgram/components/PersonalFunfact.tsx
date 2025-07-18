@@ -68,7 +68,14 @@ export default function PersonalFunfact({
     if (!isOpen) return null;
 
     return (
-      <Modal isOpen={isOpen} onClose={onClose || (() => {})} title="Personal Fun Facts">
+      <Modal 
+        isOpen={isOpen} 
+        onClose={onClose || (() => {})} 
+        title="Personal Fun Facts"
+        onSave={handleSave}
+        saveDisabled={!hasAnyEditFunFacts}
+        showSaveHint={true}
+      >
         <div className="space-y-3">
           {guests.length === 0 ? (
             <div className="text-center py-8">
@@ -86,11 +93,6 @@ export default function PersonalFunfact({
                   <textarea
                     value={editFunFacts[guest.id] || ""}
                     onChange={(e) => handleFunFactChange(guest.id, e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Escape') {
-                        handleCancel();
-                      }
-                    }}
                     rows={2}
                     className="w-full px-4 py-2 rounded-xl border border-dark-royalty/20 bg-white/70 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 focus:border-transparent transition-all duration-300 resize-none"
                     placeholder={`Fun fact about ${guest.name}...`}

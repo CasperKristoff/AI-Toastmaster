@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/Modal';
 import { Guest } from '../../../types/event';
 
@@ -7,6 +7,7 @@ interface SpinTheWheelProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (challenge: string) => void;
+  initialChallenge?: string; // Add support for editing mode
 }
 
 // Colors for wheel segments
@@ -59,8 +60,15 @@ const createWheelSegments = (guests: Guest[]) => {
   });
 };
 
-const SpinTheWheel: React.FC<SpinTheWheelProps> = ({ guests, isOpen, onClose, onSave }) => {
-  const [challenge, setChallenge] = useState('');
+const SpinTheWheel: React.FC<SpinTheWheelProps> = ({ guests, isOpen, onClose, onSave, initialChallenge }) => {
+  const [challenge, setChallenge] = useState(initialChallenge || '');
+
+  // Update challenge when initialChallenge changes (for editing mode)
+  useEffect(() => {
+    if (initialChallenge) {
+      setChallenge(initialChallenge);
+    }
+  }, [initialChallenge]);
 
   const handleSave = () => {
     onSave(challenge);
@@ -69,8 +77,15 @@ const SpinTheWheel: React.FC<SpinTheWheelProps> = ({ guests, isOpen, onClose, on
 
   const segments = createWheelSegments(guests);
 
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Spin The Wheel">
+    return (
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      title="Spin The Wheel"
+      onSave={handleSave}
+      saveDisabled={!challenge.trim()}
+      showSaveHint={true}
+    >
       <div className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-deep-sea mb-2">Challenge</label>
@@ -122,16 +137,10 @@ const SpinTheWheel: React.FC<SpinTheWheelProps> = ({ guests, isOpen, onClose, on
               />
             </svg>
             
-            {/* Pointer */}
-            <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-2">
-              <div className="w-0 h-0 border-l-[20px] border-l-gray-400 border-t-[10px] border-t-transparent border-b-[10px] border-b-transparent"></div>
-            </div>
+ 
           </div>
           
-          {/* Instructions */}
-          <div className="text-center mt-4 text-sm text-deep-sea/70">
-            <p>Click to spin or press Ctrl+Enter</p>
-          </div>
+
         </div>
         
         <div className="flex justify-end pt-4 border-t border-dark-royalty/10">
@@ -257,10 +266,7 @@ export const SpinTheWheelPresentation: React.FC<SpinTheWheelPresentationProps> =
             />
           </svg>
           
-          {/* Pointer */}
-          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-2">
-            <div className="w-0 h-0 border-t-[20px] border-t-gray-400 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent"></div>
-          </div>
+
         </div>
         
         {/* Spin Button */}

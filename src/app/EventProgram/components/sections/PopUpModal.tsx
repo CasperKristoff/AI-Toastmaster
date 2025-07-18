@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -10,8 +10,6 @@ interface ModalProps {
   onSave?: () => void; // Function to call when Enter is pressed
   saveDisabled?: boolean; // Whether the save action should be disabled
   showSaveHint?: boolean; // Whether to show the save hint text
-  autoFocus?: boolean; // Whether to auto-focus the first input field
-  disableEnterSave?: boolean; // Whether to disable Enter key saving
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -24,17 +22,13 @@ const Modal: React.FC<ModalProps> = ({
   onSave,
   saveDisabled = false,
   showSaveHint = false,
-  autoFocus = true,
-  disableEnterSave = false,
 }) => {
-  const modalRef = useRef<HTMLDivElement>(null);
-
   // Handle Enter key for saving
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (!isOpen) return;
       
-      if (e.key === 'Enter' && onSave && !saveDisabled && !disableEnterSave) {
+      if (e.key === 'Enter' && onSave && !saveDisabled) {
         e.preventDefault();
         onSave();
       } else if (e.key === 'Escape') {
@@ -45,29 +39,13 @@ const Modal: React.FC<ModalProps> = ({
 
     document.addEventListener('keydown', handleKeyPress);
     return () => document.removeEventListener('keydown', handleKeyPress);
-  }, [isOpen, onSave, saveDisabled, disableEnterSave, onClose]);
-
-  // Auto-focus first input field when modal opens
-  useEffect(() => {
-    if (isOpen && autoFocus && modalRef.current) {
-      // Small delay to ensure modal is fully rendered
-      const timer = setTimeout(() => {
-        const firstInput = modalRef.current?.querySelector('input, textarea, select') as HTMLElement;
-        if (firstInput) {
-          firstInput.focus();
-        }
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, autoFocus]);
+  }, [isOpen, onSave, saveDisabled, onClose]);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
       <div
-        ref={modalRef}
         className={`bg-white/95 backdrop-blur-xl rounded-3xl p-5 w-full ${maxWidth} max-h-[90vh] ${minHeight} overflow-y-auto border border-dark-royalty/20 shadow-2xl`}
       >
         <div className="flex justify-between items-center mb-6">
@@ -94,4 +72,4 @@ const Modal: React.FC<ModalProps> = ({
   );
 };
 
-export default Modal; 
+export default Modal;
