@@ -236,3 +236,6 @@ const JeopardyPresentation: React.FC<JeopardyPresentationProps> = ({ categories 
 };
 
 export default JeopardyPresentation; 
+
+
+//Takk for hjelpa patty
