@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import app from "../constants/firebaseConfig";
 
 interface LoginFormProps {
@@ -11,6 +11,7 @@ interface LoginFormProps {
 export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [isSignupMode, setIsSignupMode] = useState(false);
@@ -25,6 +26,12 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
     try {
       if (isSignupMode) {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        // Update the user's display name with the full name
+        if (fullName.trim()) {
+          await updateProfile(userCredential.user, {
+            displayName: fullName.trim()
+          });
+        }
         setSuccess("Signup successful! You can now log in.");
         if (onLoginSuccess) onLoginSuccess(userCredential.user);
       } else {
@@ -45,6 +52,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
     setSuccess("");
     setEmail("");
     setPassword("");
+    setFullName("");
   };
 
   return (
@@ -69,6 +77,22 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
               {/* Login form */}
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-4">
+                  {isSignupMode && (
+                    <div>
+                      <label htmlFor="fullName" className="block text-sm font-medium text-deep-sea mb-2">
+                        Full Name
+                      </label>
+                      <input
+                        id="fullName"
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        required={isSignupMode}
+                        className="w-full px-4 py-3 rounded-xl border border-dark-royalty/20 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 focus:border-transparent transition-all duration-300"
+                        placeholder="Enter your full name"
+                      />
+                    </div>
+                  )}
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-deep-sea mb-2">
                       Email Address

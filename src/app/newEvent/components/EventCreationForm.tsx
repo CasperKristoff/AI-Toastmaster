@@ -73,14 +73,10 @@ export default function EventCreationForm({ onEventCreated }: EventCreationFormP
 
   return (
     <div className="relative">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="relative">
-          {/* Decorative elements */}
-          <div className="absolute -top-4 -left-4 w-72 h-72 bg-deep-sea/5 rounded-full blur-3xl"></div>
-          <div className="absolute -bottom-4 -right-4 w-72 h-72 bg-kimchi/5 rounded-full blur-3xl"></div>
-          
           {/* Main content */}
-          <div className="relative bg-white/70 backdrop-blur-xl rounded-3xl shadow-md ring-1 ring-black/5 p-8 sm:p-12">
+          <div className="relative bg-white rounded-3xl shadow-xl border border-gray-200 p-8 sm:p-12">
             {/* Header */}
             <div className="text-center mb-8">
               <h1 className="text-4xl sm:text-5xl font-poppins font-bold bg-gradient-to-r from-dark-royalty to-deep-sea bg-clip-text text-transparent pb-1">

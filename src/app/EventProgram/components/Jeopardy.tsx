@@ -65,7 +65,14 @@ const Jeopardy: React.FC<JeopardyProps> = ({
       // Initialize with default categories based on board size
       generateDefaultCategories(boardSize);
     }
-  }, [initialSegment, boardSize]);
+  }, [initialSegment]);
+
+  // Handle board size changes
+  useEffect(() => {
+    if (!initialSegment) {
+      generateDefaultCategories(boardSize);
+    }
+  }, [boardSize, initialSegment]);
 
   const generateDefaultCategories = (size: number) => {
     const defaultCategories: JeopardyCategory[] = [];
@@ -172,6 +179,7 @@ const Jeopardy: React.FC<JeopardyProps> = ({
         body: JSON.stringify({
           prompt,
           categories,
+          boardSize,
           eventType: 'event', // You can make this dynamic based on the event
         }),
       });
@@ -188,7 +196,13 @@ const Jeopardy: React.FC<JeopardyProps> = ({
         
         // Handle different types of AI responses
         if (data.categories) {
-          setCategories(data.categories);
+          // Validate that we got the correct number of categories and questions
+          if (data.categories.length === boardSize && 
+              data.categories.every((cat: any) => cat.questions && cat.questions.length === boardSize)) {
+            setCategories(data.categories);
+          } else {
+            setAiMessage(`AI generated incorrect board size. Expected ${boardSize}x${boardSize}, got ${data.categories.length}x${data.categories[0]?.questions?.length || 0}. Please try again.`);
+          }
         } else if (data.suggestions) {
           setAiMessage(data.suggestions);
         }
@@ -286,174 +300,123 @@ const Jeopardy: React.FC<JeopardyProps> = ({
       onClose={handleClose} 
       title="Create Jeopardy Game"
       maxWidth="max-w-6xl"
+      minHeight="min-h-[80vh]"
       onSave={handleSave}
       saveDisabled={categories.length === 0}
       showSaveHint={false}
       disableEnterSave={true}
     >
-      <div className="space-y-6 font-inter">
-        {/* Board Configuration */}
-        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-          <div className="flex items-center space-x-3 mb-3">
-            <div className="text-xl">⚙️</div>
-            <h3 className="text-lg font-semibold text-gray-800">Board Configuration</h3>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <label className="text-sm font-medium text-gray-700">
-              Board Size:
-            </label>
+      <div className="space-y-4 font-inter pb-20">
+        {/* Compact Header with Board Size */}
+        <div className="flex items-center bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-100">
+          {/* Board Size Selector */}
+          <div className="flex items-center space-x-3">
+            <label className="text-sm font-medium text-gray-700">Board:</label>
             <select
               value={boardSize}
               onChange={(e) => handleBoardSizeChange(Number(e.target.value))}
-              className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
             >
-              <option value={3}>3x3 (9 questions)</option>
-              <option value={4}>4x4 (16 questions)</option>
-              <option value={5}>5x5 (25 questions)</option>
-              <option value={6}>6x6 (36 questions)</option>
+              <option value={3}>3×3</option>
+              <option value={4}>4×4</option>
+              <option value={5}>5×5</option>
+              <option value={6}>6×6</option>
             </select>
-            <span className="text-sm text-gray-600">
-              {boardSize}x{boardSize} board with {boardSize * boardSize} total questions
+            <span className="text-xs text-gray-500">
+              {boardSize * boardSize} questions
             </span>
           </div>
         </div>
 
-        {/* AI Assistant Section */}
-        <div className="bg-white rounded-xl p-4 border border-gray-100">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="text-xl">🤖</div>
-              <h3 className="text-lg font-semibold text-gray-800">AI Assistant</h3>
-            </div>
-            <button
-              onClick={() => setShowSaveDialog(true)}
-              disabled={isGenerating}
-              className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 disabled:opacity-50 text-sm flex items-center space-x-1 border border-emerald-200"
-              title="Save current state"
-            >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-              </svg>
-              <span>Save</span>
-            </button>
-          </div>
-          
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => generateWithAI(`Generate ${boardSize} themed categories for this event`)}
-                disabled={isGenerating}
-                className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 disabled:opacity-50 text-sm border border-blue-200"
-              >
-                Generate Categories
-              </button>
-              <div className="relative inline-block">
-                <select
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      generateWithAI(e.target.value);
-                      e.target.value = '';
-                    }
-                  }}
-                  disabled={isGenerating}
-                  className="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 disabled:opacity-50 text-sm border border-green-200 appearance-none cursor-pointer"
-                >
-                  <option value="">Difficulty...</option>
-                  <option value="Make questions more challenging">Make Harder</option>
-                  <option value="Make questions easier">Make Easier</option>
-                </select>
-              </div>
-              <button
-                onClick={undo}
-                disabled={!canUndo || isGenerating}
-                className="px-3 py-1.5 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 disabled:opacity-50 text-sm flex items-center space-x-1 border border-red-200"
-                title="Undo last AI change"
-              >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                </svg>
-                <span>Undo</span>
-              </button>
-            </div>
-            
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                value={userInput}
-                onChange={(e) => setUserInput(e.target.value)}
-                placeholder="Ask AI to customize the game..."
-                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && userInput.trim()) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    generateWithAI(userInput);
-                    setUserInput('');
-                  }
-                }}
-              />
-              <button
-                onClick={() => {
-                  if (userInput.trim()) {
-                    generateWithAI(userInput);
-                    setUserInput('');
-                  }
-                }}
-                disabled={isGenerating || !userInput.trim()}
-                className="px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 disabled:opacity-50 border border-purple-200"
-              >
-                Ask AI
-              </button>
-            </div>
-            
-            {aiMessage && (
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                <p className="text-sm text-gray-700">{aiMessage}</p>
-                {canUndo && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    💡 You can undo the last {historyIndex} change{historyIndex > 1 ? 's' : ''}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Saved States */}
-            {savedStates.length > 0 && (
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Saved States:</h4>
-                <div className="space-y-2 max-h-32 overflow-y-auto">
-                  {savedStates.map((savedState, index) => (
-                    <div key={index} className="flex items-center justify-between bg-white rounded p-2 border border-gray-100">
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-800">{savedState.name}</p>
-                        <p className="text-xs text-gray-500">
-                          {savedState.timestamp.toLocaleString()}
-                        </p>
-                      </div>
-                      <div className="flex space-x-1">
-                        <button
-                          onClick={() => loadSavedState(savedState)}
-                          className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100 border border-blue-200"
-                          title="Load this state"
-                        >
-                          Load
-                        </button>
-                        <button
-                          onClick={() => deleteSavedState(index)}
-                          className="px-2 py-1 bg-red-50 text-red-700 rounded text-xs hover:bg-red-100 border border-red-200"
-                          title="Delete this state"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+        {/* AI Input */}
+        <div className="flex space-x-2">
+          <input
+            type="text"
+            value={userInput}
+            onChange={(e) => setUserInput(e.target.value)}
+            placeholder="Ask AI to customize the game..."
+            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && userInput.trim()) {
+                e.preventDefault();
+                e.stopPropagation();
+                generateWithAI(userInput);
+                setUserInput('');
+              }
+            }}
+          />
+          <button
+            onClick={() => {
+              if (userInput.trim()) {
+                generateWithAI(userInput);
+                setUserInput('');
+              }
+            }}
+            disabled={isGenerating || !userInput.trim()}
+            className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50 font-medium transition-colors"
+          >
+            Ask AI
+          </button>
         </div>
+
+        {/* Undo Button */}
+        <div className="flex justify-start">
+          <button
+            onClick={undo}
+            disabled={!canUndo || isGenerating}
+            className="px-3 py-1.5 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 text-xs font-medium transition-colors"
+            title="Undo last change"
+          >
+            Undo
+          </button>
+        </div>
+
+        {/* AI Message */}
+        {aiMessage && (
+          <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+            <p className="text-sm text-blue-700">{aiMessage}</p>
+            {canUndo && (
+              <p className="text-xs text-blue-500 mt-1">
+                💡 You can undo the last {historyIndex} change{historyIndex > 1 ? 's' : ''}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Saved States */}
+        {savedStates.length > 0 && (
+          <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Saved States:</h4>
+            <div className="space-y-2 max-h-32 overflow-y-auto">
+              {savedStates.map((savedState, index) => (
+                <div key={index} className="flex items-center justify-between bg-white rounded p-2 border border-gray-100">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-800">{savedState.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {savedState.timestamp.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex space-x-1">
+                    <button
+                      onClick={() => loadSavedState(savedState)}
+                      className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100 border border-blue-200"
+                      title="Load this state"
+                    >
+                      Load
+                    </button>
+                    <button
+                      onClick={() => deleteSavedState(index)}
+                      className="px-2 py-1 bg-red-50 text-red-700 rounded text-xs hover:bg-red-100 border border-red-200"
+                      title="Delete this state"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+                )}
 
         {/* Jeopardy Board */}
         <div className="space-y-4">
@@ -513,7 +476,7 @@ const Jeopardy: React.FC<JeopardyProps> = ({
             <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">
-                  Edit Question - {editingQuestion.points} point{editingQuestion.points > 1 ? 's' : ''}
+                  Edit Question - {editingQuestion?.points} point{editingQuestion?.points && editingQuestion.points > 1 ? 's' : ''}
                 </h3>
                 <button
                   onClick={() => setEditingQuestion(null)}
@@ -529,10 +492,10 @@ const Jeopardy: React.FC<JeopardyProps> = ({
                     Answer (What the host reads to players)
                   </label>
                   <textarea
-                    value={editingQuestion.answer}
+                    value={editingQuestion?.answer || ''}
                     onChange={(e) => updateQuestion(
-                      categories.find(c => c.questions.some(q => q.id === editingQuestion.id))?.id || '',
-                      editingQuestion.id,
+                      categories.find(c => c.questions.some(q => q.id === editingQuestion?.id))?.id || '',
+                      editingQuestion?.id || '',
                       'answer',
                       e.target.value
                     )}
@@ -550,10 +513,10 @@ const Jeopardy: React.FC<JeopardyProps> = ({
                     Question (What players respond with)
                   </label>
                   <textarea
-                    value={editingQuestion.question}
+                    value={editingQuestion?.question || ''}
                     onChange={(e) => updateQuestion(
-                      categories.find(c => c.questions.some(q => q.id === editingQuestion.id))?.id || '',
-                      editingQuestion.id,
+                      categories.find(c => c.questions.some(q => q.id === editingQuestion?.id))?.id || '',
+                      editingQuestion?.id || '',
                       'question',
                       e.target.value
                     )}

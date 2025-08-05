@@ -59,22 +59,22 @@ const Guests: React.FC<GuestsProps> = ({
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <div>
+    <div className="space-y-8 w-full max-w-none">
+      <div className="flex justify-between items-center w-full">
+        <div className="flex-1 min-w-0">
           <h2 className="text-3xl font-bold text-dark-royalty">Guest List</h2>
           <p className="text-deep-sea/70 mt-2">Manage your event attendees and their details</p>
         </div>
         <button 
           onClick={() => setShowAddGuestModal(true)}
-          className="px-6 py-3 bg-dark-royalty text-white rounded-xl hover:bg-dark-royalty/90 transition-all duration-300 hover:scale-105 font-medium"
+          className="px-6 py-3 bg-dark-royalty text-white rounded-xl hover:bg-dark-royalty/90 transition-all duration-300 hover:scale-105 font-medium flex-shrink-0"
         >
           + Add Guest
         </button>
       </div>
       
       {event.guests.length === 0 ? (
-        <div className="text-center py-16">
+        <div className="text-center py-16 w-full">
           <div className="text-8xl mb-6 animate-bounce">👥</div>
           <h3 className="text-2xl font-bold text-dark-royalty mb-3">No Guests Yet</h3>
           <p className="text-deep-sea/70 mb-8 max-w-md mx-auto">Start building your guest list to get personalized AI content and better event planning recommendations.</p>
@@ -86,17 +86,17 @@ const Guests: React.FC<GuestsProps> = ({
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 w-full">
           {event.guests.map((guest) => (
-            <div key={guest.id} className="group bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-dark-royalty/10 hover:border-dark-royalty/30 transition-all duration-300 hover:shadow-lg hover:bg-white/90">
-              <div className="flex items-center space-x-4">
+            <div key={guest.id} className="group bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-dark-royalty/10 hover:border-dark-royalty/30 transition-all duration-300 hover:shadow-lg hover:bg-white/90 w-full">
+              <div className="flex items-center space-x-4 w-full">
                 <div className="w-12 h-12 bg-gradient-to-br from-deep-sea/30 to-dark-royalty/30 rounded-full flex items-center justify-center text-lg font-bold text-dark-royalty group-hover:scale-105 transition-transform duration-300 flex-shrink-0">
                   {guest.name.charAt(0)}
                 </div>
                 
                 <div className="flex-1 min-w-0">
                   {editingGuest === guest.id ? (
-                    <div className="space-y-2">
+                    <div className="space-y-2 w-full">
                       <input
                         type="text"
                         value={editGuestName}

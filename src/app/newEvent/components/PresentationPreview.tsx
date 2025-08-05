@@ -142,15 +142,15 @@ export default function PresentationPreview({ event }: PresentationPreviewProps)
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <div>
+    <div className="space-y-8 w-full max-w-none">
+      <div className="flex justify-between items-center w-full">
+        <div className="flex-1 min-w-0">
           <h2 className="text-3xl font-bold text-dark-royalty">Presentation Preview</h2>
           <p className="text-deep-sea/70 mt-2">See how your presentation will look</p>
         </div>
         <button 
           onClick={handleStartPresentation}
-          className="px-8 py-4 bg-gradient-to-r from-dark-royalty to-deep-sea text-white rounded-xl text-lg font-semibold hover:from-dark-royalty/90 hover:to-deep-sea/90 transition-all duration-300 shadow-lg hover:scale-105 flex items-center space-x-3"
+          className="px-8 py-4 bg-gradient-to-r from-dark-royalty to-deep-sea text-white rounded-xl text-lg font-semibold hover:from-dark-royalty/90 hover:to-deep-sea/90 transition-all duration-300 shadow-lg hover:scale-105 flex items-center space-x-3 flex-shrink-0"
         >
           <span className="text-2xl">🎬</span>
           <span>Presentation</span>
@@ -158,7 +158,7 @@ export default function PresentationPreview({ event }: PresentationPreviewProps)
       </div>
 
       {/* Preview Container */}
-      <div className="relative">
+      <div className="relative w-full">
         {/* Preview Window */}
         <div className={`relative w-full max-w-4xl mx-auto aspect-video ${getSlideBackground()} rounded-2xl border-2 border-dark-royalty/20 shadow-2xl overflow-hidden`}>
           {/* Slide Content */}
@@ -169,28 +169,28 @@ export default function PresentationPreview({ event }: PresentationPreviewProps)
             </div>
 
             {/* Slide Content */}
-            <div className="text-center max-w-3xl mx-auto">
+            <div className="text-center max-w-3xl mx-auto w-full">
               {/* Title */}
-              <h1 className="text-4xl font-bold text-dark-royalty mb-4 leading-tight">
+              <h1 className="text-4xl font-bold text-dark-royalty mb-4 leading-tight break-words">
                 {currentSlide.title}
               </h1>
 
               {/* Description */}
               {currentSlide.description && (
-                <p className="text-lg text-deep-sea/70 leading-relaxed max-w-2xl mx-auto">
+                <p className="text-lg text-deep-sea/70 leading-relaxed max-w-2xl mx-auto break-words">
                   {currentSlide.description}
                 </p>
               )}
 
               {/* Fun Fact specific content */}
               {currentSlide.type === 'funfact' && (
-                <div className="mt-6 space-y-4">
-                  <div className="bg-white/30 backdrop-blur-sm rounded-xl p-6 border border-dark-royalty/20">
-                    <p className="text-lg text-dark-royalty font-medium leading-relaxed">
+                <div className="mt-6 space-y-4 w-full">
+                  <div className="bg-white/30 backdrop-blur-sm rounded-xl p-6 border border-dark-royalty/20 w-full">
+                    <p className="text-lg text-dark-royalty font-medium leading-relaxed break-words">
                       &quot;{currentSlide.funFact}&quot;
                     </p>
                   </div>
-                  <div className="bg-yellow-50/80 backdrop-blur-sm rounded-xl p-4 border border-yellow-500/30">
+                  <div className="bg-yellow-50/80 backdrop-blur-sm rounded-xl p-4 border border-yellow-500/30 w-full">
                     <h3 className="text-lg font-bold text-yellow-700 mb-1">Take Your Guess!</h3>
                     <p className="text-sm text-yellow-600">
                       Discuss with the group and try to guess who this fun fact belongs to!
@@ -211,7 +211,7 @@ export default function PresentationPreview({ event }: PresentationPreviewProps)
         </div>
 
         {/* Preview Controls */}
-        <div className="flex justify-center mt-6 space-x-2">
+        <div className="flex justify-center mt-6 space-x-2 w-full">
           {slides.map((_, index) => (
             <button
               key={index}
@@ -227,9 +227,9 @@ export default function PresentationPreview({ event }: PresentationPreviewProps)
       </div>
 
       {/* Presentation Info */}
-      <div className="bg-white/50 backdrop-blur-xl rounded-2xl p-6 border border-dark-royalty/10">
+      <div className="bg-white/50 backdrop-blur-xl rounded-2xl p-6 border border-dark-royalty/10 w-full">
         <h3 className="text-xl font-bold text-dark-royalty mb-4">Presentation Details</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm w-full">
           <div>
             <span className="text-deep-sea/60">Total Slides:</span>
             <span className="ml-2 font-medium text-dark-royalty">{slides.length}</span>

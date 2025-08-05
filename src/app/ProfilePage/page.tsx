@@ -9,6 +9,7 @@ import { eventService } from "../../services/eventService";
 import { getAuth, signOut } from "firebase/auth";
 import { FaTrash } from 'react-icons/fa';
 import { FaEllipsisH } from 'react-icons/fa';
+import Image from "next/image";
 
 function ProfilePageContent() {
   const router = useRouter();
@@ -108,10 +109,11 @@ function ProfilePageContent() {
         <main className="text-center max-w-3xl px-6">
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-dark-royalty/20">
             <p className="text-lg text-deep-sea/90 mb-6 leading-relaxed">
-              AI Toastmaster is a digital event companion designed to help organizers plan and execute unforgettable events using the power of generative AI. The platform supports everything from initial planning (guest list, tone, and event type) to real-time guidance during the event itself. It generates customized toasts, programs, games, and speech content based on user inputs, ensuring a smooth, entertaining, and personalized experience for guests.
-            </p>
-            <p className="text-lg text-deep-sea/90 mb-8 leading-relaxed">
-              Whether you&apos;re planning a wedding, birthday, corporate party, or surprise celebration, AI Toastmaster uses structured data, tone presets, and contextual guest profiles to build a unique flow for each event. During the event, the app transitions into a live mode—presenting content, leading activities, and acting as a virtual MC to guide the host and guests through each segment of the evening.
+            <span className="block text-2xl font-bold mb-2 text-dark-royalty">Welcome to AI Toastmaster</span>
+            <span className="block text-lg mb-4 text-deep-sea/90">
+              Your smart sidekick for event creation.<br />
+              Plan, host, and entertain with AI-generated content, interactive games, and real-time event management.
+            </span>
             </p>
             <button
               onClick={() => router.push("/login")}
@@ -128,7 +130,7 @@ function ProfilePageContent() {
   if (isCreateMode) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-deep-sea/5 via-white to-kimchi/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-4xl font-bold text-dark-royalty font-poppins">Create New Event</h1>
@@ -141,9 +143,7 @@ function ProfilePageContent() {
               ← Back to Dashboard
             </button>
           </div>
-          <div className="bg-white/50 backdrop-blur-xl rounded-2xl p-8 border border-dark-royalty/10">
-            <EventCreationForm onEventCreated={handleEventCreated} />
-          </div>
+          <EventCreationForm onEventCreated={handleEventCreated} />
         </div>
       </div>
     );
@@ -167,7 +167,14 @@ function ProfilePageContent() {
       <nav className="bg-white/80 backdrop-blur-xl border-b border-dark-royalty/10 px-6 py-4 relative">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-dark-royalty">AI Toastmaster</h1>
+            <Image 
+              src="/ToastmasterImage.png" 
+              alt="AI Toastmaster" 
+              width={40}
+              height={40}
+              className="mr-3 hover:scale-110 transition-transform duration-200"
+            />
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent cursor-pointer hover:scale-105 transition-transform duration-200 hover:from-indigo-700 hover:to-purple-700">AI Toastmaster</h1>
           </div>
           <div className="flex items-center space-x-4 relative" ref={dropdownRef}>
             <button
@@ -198,13 +205,15 @@ function ProfilePageContent() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-dark-royalty mb-2">Welcome back, {user.email}</h2>
+        <div className="mb-12">
+          <h2 className="text-5xl font-bold text-dark-royalty mb-4">
+            Welcome back, {user.displayName || user.email?.split('@')[0] || 'User'}
+          </h2>
         </div>
 
         {/* Events List */}
-        <div className="space-y-6">
-          <h3 className="text-xl font-semibold text-dark-royalty">Your Events</h3>
+        <div className="space-y-8">
+          <h3 className="text-3xl font-bold text-dark-royalty mb-6">Your Events</h3>
           {userEvents.length > 0 ? (
             <>
               <div className="space-y-4 max-w-2xl">
@@ -213,7 +222,7 @@ function ProfilePageContent() {
                   <div
                     key={event.id}
                     className="bg-white/90 backdrop-blur-xl rounded-xl border border-gray-200 shadow-sm transition-all duration-300 hover:shadow-md hover:border-dark-royalty/30 relative group cursor-pointer"
-                    style={{padding: '1rem 1.5rem'}}
+                    style={{padding: '1.5rem 2rem'}}
                     onClick={() => router.push('/newEvent')}
                   >
                     {/* Delete Icon Button */}
@@ -255,8 +264,8 @@ function ProfilePageContent() {
                       </div>
                     )}
                     {/* Card Content */}
-                    <div className="flex items-center space-x-3">
-                      <span className="text-2xl">
+                    <div className="flex items-center space-x-4">
+                      <span className="text-3xl">
                           {event.type === 'house' ? '🍻' : 
                            event.type === 'bachelor' ? '🕺' : 
                            event.type === 'theme' ? '🎭' : 
@@ -267,8 +276,8 @@ function ProfilePageContent() {
                            event.type === 'breakup' ? '💔' : '🎊'}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-lg font-semibold text-dark-royalty truncate">{event.name}</h4>
-                        <div className="flex items-center space-x-4 text-sm text-deep-sea/70">
+                        <h4 className="text-2xl font-bold text-dark-royalty truncate mb-2">{event.name}</h4>
+                        <div className="flex items-center space-x-4 text-lg text-deep-sea/70">
                           <span>{event.date.toLocaleDateString()} at {event.startTime}</span>
                           <span>•</span>
                           <span>{event.guests.length} guests</span>
@@ -282,24 +291,24 @@ function ProfilePageContent() {
                 })}
               </div>
               {/* Create New Event Button below events */}
-              <div className="mt-8">
-                <button
-                  onClick={() => router.push('/ProfilePage?create=true')}
-                  className="px-8 py-4 bg-gradient-to-r from-dark-royalty to-deep-sea text-white rounded-xl text-lg font-semibold hover:from-dark-royalty/90 hover:to-deep-sea/90 transition-all duration-300 shadow-lg hover:scale-105 flex items-center space-x-3"
-                >
-                  <span className="text-2xl">+</span>
-                  <span>Create New Event</span>
-                </button>
+              <div className="mt-12">
+                              <button
+                onClick={() => router.push('/newEvent?create=true')}
+                className="px-12 py-6 bg-gradient-to-r from-dark-royalty to-deep-sea text-white rounded-2xl text-2xl font-bold hover:from-dark-royalty/90 hover:to-deep-sea/90 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 flex items-center space-x-4"
+              >
+                <span className="text-3xl">+</span>
+                <span>Create New Event</span>
+              </button>
               </div>
             </>
           ) : (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">🎉</div>
-              <h3 className="text-xl font-semibold text-dark-royalty mb-2">No events yet</h3>
-              <p className="text-deep-sea/70 mb-6">Create your first event to get started!</p>
+            <div className="text-center py-16">
+              <div className="text-8xl mb-6">🎉</div>
+              <h3 className="text-3xl font-bold text-dark-royalty mb-4">No events yet</h3>
+              <p className="text-xl text-deep-sea/70 mb-8">Create your first event to get started!</p>
               <button
-                onClick={() => router.push('/ProfilePage?create=true')}
-                className="px-6 py-3 bg-dark-royalty text-white rounded-lg hover:bg-dark-royalty/90 transition-all duration-300 font-medium"
+                onClick={() => router.push('/newEvent?create=true')}
+                className="px-10 py-5 bg-dark-royalty text-white rounded-xl text-xl font-bold hover:bg-dark-royalty/90 transition-all duration-300 shadow-lg hover:scale-105"
               >
                 Create Your First Event
               </button>

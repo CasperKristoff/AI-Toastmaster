@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Event, EventSegment, SegmentType } from '../../../types/event';
-import PersonalFunfact from '../sections/PersonalFunfact';
-import AISegments from '../sections/AISegments';
+import PersonalFunfact from '../../EventProgram/components/PersonalFunfact';
+import AISegments from '../../EventProgram/components/sections/AISegments';
 import {
   DndContext,
   closestCenter,
@@ -163,7 +163,7 @@ function DraggableSegment({
               <PersonalFunfact
                 guests={event.guests}
                 funFacts={editSegment.personalFunFacts}
-                onFunFactsChange={(funFacts) => setEditSegment({ ...editSegment, personalFunFacts: funFacts })}
+                onFunFactsChange={(funFacts: Record<string, string>) => setEditSegment({ ...editSegment, personalFunFacts: funFacts })}
                 isEditable={true}
               />
             </div>
@@ -192,14 +192,14 @@ function DraggableSegment({
           </div>
         </div>
       ) : (
-        <div className="group bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-dark-royalty/10 hover:border-dark-royalty/30 transition-all duration-300 hover:shadow-lg hover:bg-white/90">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4 flex-1">
+        <div className="group bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-dark-royalty/10 hover:border-dark-royalty/30 transition-all duration-300 hover:shadow-lg hover:bg-white/90 w-full">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center space-x-4 flex-1 min-w-0">
               {/* Drag Handle */}
               <div 
                 {...attributes} 
                 {...listeners}
-                className="cursor-grab active:cursor-grabbing p-2 text-deep-sea/60 hover:text-dark-royalty transition-colors rounded-lg hover:bg-deep-sea/10"
+                className="cursor-grab active:cursor-grabbing p-2 text-deep-sea/60 hover:text-dark-royalty transition-colors rounded-lg hover:bg-deep-sea/10 flex-shrink-0"
                 title="Drag to reorder"
               >
                 <span className="text-lg font-bold">...</span>
@@ -212,11 +212,11 @@ function DraggableSegment({
               
               {/* Segment Content */}
               <div className="flex-1 min-w-0">
-                <div className="text-xl font-bold text-dark-royalty">
+                <div className="text-xl font-bold text-dark-royalty truncate">
                   {segment.title} - {segment.duration}min
                 </div>
                 {segment.description && segment.description !== "Guess who each fun fact belongs to!" && (
-                  <div className="text-deep-sea/70 mt-1">
+                  <div className="text-deep-sea/70 mt-1 truncate">
                     {segment.description}
                   </div>
                 )}
@@ -224,7 +224,7 @@ function DraggableSegment({
             </div>
             
             {/* Action Menu */}
-            <div className="relative opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="relative opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0">
               <button
                 className="p-2 text-deep-sea/60 hover:text-dark-royalty transition-colors rounded-lg hover:bg-deep-sea/10"
                 title="More options"
@@ -343,22 +343,22 @@ const EventProgram: React.FC<EventProgramProps> = ({
 }) => {
   const [showAISegmentsModal, setShowAISegmentsModal] = useState(false);
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <div>
+    <div className="space-y-8 w-full max-w-none">
+      <div className="flex justify-between items-center w-full">
+        <div className="flex-1 min-w-0">
           <h2 className="text-3xl font-bold text-dark-royalty">Event Program</h2>
           <p className="text-deep-sea/70 mt-2">Your event canvas - view and edit details</p>
         </div>
         <button 
           onClick={() => setShowAddSegmentModal(true)}
-          className="px-6 py-3 bg-dark-royalty text-white rounded-xl hover:bg-dark-royalty/90 transition-all duration-300 hover:scale-105 font-medium"
+          className="px-6 py-3 bg-dark-royalty text-white rounded-xl hover:bg-dark-royalty/90 transition-all duration-300 hover:scale-105 font-medium flex-shrink-0"
         >
           + Add Segment
         </button>
       </div>
       
       <div 
-        className="relative min-h-[600px] bg-gradient-to-br from-deep-sea/10 via-white to-kimchi/10 rounded-3xl p-8 border-2 border-dashed border-dark-royalty/20 overflow-hidden"
+        className="relative min-h-[600px] w-full bg-gradient-to-br from-deep-sea/10 via-white to-kimchi/10 rounded-3xl p-8 border-2 border-dashed border-dark-royalty/20 overflow-hidden"
         onClick={handleClickOutside}
       >
         <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-xl rounded-xl px-4 py-2 shadow-lg border border-dark-royalty/10">
@@ -377,29 +377,29 @@ const EventProgram: React.FC<EventProgramProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="group bg-white/90 backdrop-blur-xl rounded-2xl p-6 border-2 border-dark-royalty/10 hover:border-dark-royalty/30 transition-all duration-300 hover:shadow-xl hover:scale-105 cursor-pointer">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="text-4xl animate-pulse">🎭</div>
-                <div>
-                  <h3 className="text-lg font-bold text-dark-royalty mb-1">Event Tone</h3>
-                  <p className="text-deep-sea/70 font-medium">{getToneLabel(event.tone)}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 w-full">
+          <div className="group bg-white/90 backdrop-blur-xl rounded-2xl p-6 border-2 border-dark-royalty/10 hover:border-dark-royalty/30 transition-all duration-300 hover:shadow-xl hover:scale-105 cursor-pointer w-full">
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center space-x-4 flex-1 min-w-0">
+                <div className="text-4xl animate-pulse flex-shrink-0">🎭</div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-bold text-dark-royalty mb-1 truncate">Event Tone</h3>
+                  <p className="text-deep-sea/70 font-medium truncate">{getToneLabel(event.tone)}</p>
                 </div>
               </div>
-              <div className="px-4 py-2 bg-gradient-to-r from-dark-royalty to-deep-sea text-white rounded-full text-sm font-bold shadow-lg">
+              <div className="px-4 py-2 bg-gradient-to-r from-dark-royalty to-deep-sea text-white rounded-full text-sm font-bold shadow-lg flex-shrink-0">
                 {event.tone}
               </div>
             </div>
           </div>
 
-          <div className="group bg-white/90 backdrop-blur-xl rounded-2xl p-6 border-2 border-dark-royalty/10 hover:border-dark-royalty/30 transition-all duration-300 hover:shadow-xl hover:scale-105 cursor-pointer">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="text-4xl animate-bounce">{getEventTypeIcon(event.type)}</div>
-                <div>
-                  <h3 className="text-lg font-bold text-dark-royalty mb-1">Event Type</h3>
-                  <p className="text-deep-sea/70 font-medium">{getEventTypeLabel(event.type)}</p>
+          <div className="group bg-white/90 backdrop-blur-xl rounded-2xl p-6 border-2 border-dark-royalty/10 hover:border-dark-royalty/30 transition-all duration-300 hover:shadow-xl hover:scale-105 cursor-pointer w-full">
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center space-x-4 flex-1 min-w-0">
+                <div className="text-4xl animate-bounce flex-shrink-0">{getEventTypeIcon(event.type)}</div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-bold text-dark-royalty mb-1 truncate">Event Type</h3>
+                  <p className="text-deep-sea/70 font-medium truncate">{getEventTypeLabel(event.type)}</p>
                 </div>
               </div>
             </div>
@@ -478,17 +478,17 @@ const EventProgram: React.FC<EventProgramProps> = ({
           </SortableContext>
         </DndContext>
 
-        <div className="mb-8 space-y-4">
-          <div className="flex space-x-4">
+        <div className="mb-8 space-y-4 w-full">
+          <div className="flex flex-wrap gap-4 w-full">
             <button 
               onClick={() => setShowAddSegmentModal(true)}
-              className="px-6 py-3 bg-dark-royalty text-white rounded-xl hover:bg-dark-royalty/90 transition-all duration-300 font-medium"
+              className="px-6 py-3 bg-dark-royalty text-white rounded-xl hover:bg-dark-royalty/90 transition-all duration-300 font-medium flex-shrink-0"
             >
               + Add Segment
             </button>
             <button 
               onClick={() => setShowAISegmentsModal(true)}
-              className="px-6 py-3 bg-gradient-to-r from-kimchi/80 to-deep-sea/80 text-white rounded-xl hover:from-kimchi/90 hover:to-deep-sea/90 transition-all duration-300 font-medium flex items-center space-x-2"
+              className="px-6 py-3 bg-gradient-to-r from-kimchi/80 to-deep-sea/80 text-white rounded-xl hover:from-kimchi/90 hover:to-deep-sea/90 transition-all duration-300 font-medium flex items-center space-x-2 flex-shrink-0"
             >
               <span>🤖</span>
               <span>AI Recommended Segments</span>

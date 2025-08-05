@@ -17,54 +17,115 @@ interface JeopardyCategory {
 
 interface JeopardyPresentationProps {
   categories: JeopardyCategory[];
+  tileStates?: TileState;
+  setTileStates?: React.Dispatch<React.SetStateAction<TileState>>;
+  originalCompletedStates?: TileOriginalState;
+  setOriginalCompletedStates?: React.Dispatch<React.SetStateAction<TileOriginalState>>;
+  onStateChange?: (tileStates: TileState, originalCompletedStates: TileOriginalState) => void;
 }
 
 interface TileState {
   [key: string]: 'hidden' | 'question' | 'answer' | 'completed';
 }
 
-const JeopardyPresentation: React.FC<JeopardyPresentationProps> = ({ categories }) => {
-  const [tileStates, setTileStates] = useState<TileState>({});
+interface TileOriginalState {
+  [key: string]: boolean; // true if originally completed
+}
+
+const JeopardyPresentation: React.FC<JeopardyPresentationProps> = ({ 
+  categories, 
+  tileStates: externalTileStates, 
+  setTileStates: externalSetTileStates,
+  originalCompletedStates: externalOriginalCompletedStates,
+  setOriginalCompletedStates: externalSetOriginalCompletedStates,
+  onStateChange
+}) => {
+  // Use external state if provided, otherwise use internal state
+  const [internalTileStates, setInternalTileStates] = useState<TileState>({});
+  const [internalOriginalCompletedStates, setInternalOriginalCompletedStates] = useState<TileOriginalState>({});
+  
+  const tileStates = externalTileStates || internalTileStates;
+  const setTileStates = externalSetTileStates || setInternalTileStates;
+  const originalCompletedStates = externalOriginalCompletedStates || internalOriginalCompletedStates;
+  const setOriginalCompletedStates = externalSetOriginalCompletedStates || setInternalOriginalCompletedStates;
+  
   const [currentQuestion, setCurrentQuestion] = useState<JeopardyQuestion | null>(null);
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [showAnswerModal, setShowAnswerModal] = useState(false);
 
-  // Initialize all tiles as hidden
+  // Initialize all tiles as hidden (only if no external state is provided)
   useEffect(() => {
-    const initialStates: TileState = {};
-    categories.forEach(category => {
-      category.questions.forEach(question => {
-        initialStates[question.id] = 'hidden';
+    if (!externalTileStates && categories.length > 0) {
+      const initialStates: TileState = {};
+      const initialCompletedStates: TileOriginalState = {};
+      categories.forEach(category => {
+        category.questions.forEach(question => {
+          initialStates[question.id] = 'hidden';
+          initialCompletedStates[question.id] = false;
+        });
       });
-    });
-    setTileStates(initialStates);
-  }, [categories]);
+      setInternalTileStates(initialStates);
+      setInternalOriginalCompletedStates(initialCompletedStates);
+    }
+  }, [categories, externalTileStates]);
 
   const handleTileClick = (question: JeopardyQuestion) => {
-    if (tileStates[question.id] === 'hidden') {
-      // First click - show question
+    if (tileStates[question.id] === 'hidden' || tileStates[question.id] === 'completed') {
+      // Allow clicking on hidden or completed questions
       setCurrentQuestion(question);
       setShowQuestionModal(true);
-      setTileStates(prev => ({ ...prev, [question.id]: 'question' }));
+      // Set to question state for viewing
+      const newTileStates: TileState = { ...tileStates, [question.id]: 'question' };
+      setTileStates(newTileStates);
+      
+      // Save state if callback provided
+      if (onStateChange) {
+        onStateChange(newTileStates, originalCompletedStates);
+      }
     }
   };
 
   const handleQuestionClose = () => {
     setShowQuestionModal(false);
+    // If the question was originally completed, restore its completed state
+    if (currentQuestion && originalCompletedStates[currentQuestion.id]) {
+      const newTileStates: TileState = { ...tileStates, [currentQuestion.id]: 'completed' };
+      setTileStates(newTileStates);
+      
+      // Save state if callback provided
+      if (onStateChange) {
+        onStateChange(newTileStates, originalCompletedStates);
+      }
+    }
   };
 
   const handleShowAnswer = () => {
     setShowQuestionModal(false);
     if (currentQuestion) {
       setShowAnswerModal(true);
-      setTileStates(prev => ({ ...prev, [currentQuestion.id]: 'answer' }));
+      const newTileStates: TileState = { ...tileStates, [currentQuestion.id]: 'answer' };
+      setTileStates(newTileStates);
+      
+      // Save state if callback provided
+      if (onStateChange) {
+        onStateChange(newTileStates, originalCompletedStates);
+      }
     }
   };
 
   const handleAnswerClose = () => {
     setShowAnswerModal(false);
     if (currentQuestion) {
-      setTileStates(prev => ({ ...prev, [currentQuestion.id]: 'completed' }));
+      const newTileStates: TileState = { ...tileStates, [currentQuestion.id]: 'completed' };
+      const newOriginalCompletedStates: TileOriginalState = { ...originalCompletedStates, [currentQuestion.id]: true };
+      
+      setTileStates(newTileStates);
+      setOriginalCompletedStates(newOriginalCompletedStates);
+      
+      // Save state if callback provided
+      if (onStateChange) {
+        onStateChange(newTileStates, newOriginalCompletedStates);
+      }
     }
   };
 
@@ -116,7 +177,7 @@ const JeopardyPresentation: React.FC<JeopardyPresentationProps> = ({ categories 
       case 'answer':
         return 'bg-gradient-to-br from-yellow-500 to-yellow-600 cursor-pointer';
       case 'completed':
-        return 'bg-gradient-to-br from-gray-500 to-gray-600 cursor-not-allowed';
+        return 'bg-gradient-to-br from-gray-500 to-gray-600 cursor-pointer hover:from-gray-400 hover:to-gray-500';
       default:
         return 'bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 cursor-pointer';
     }
@@ -160,7 +221,7 @@ const JeopardyPresentation: React.FC<JeopardyPresentationProps> = ({ categories 
                 <button
                   key={question.id}
                   onClick={() => handleTileClick(question)}
-                  disabled={tileStates[question.id] === 'completed' || tileStates[question.id] === 'question'}
+                  disabled={tileStates[question.id] === 'question'}
                   data-jeopardy-tile={tileStates[question.id]}
                   className={`${getTileStyle(question)} p-2 rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center min-h-[80px] text-center`}
                 >

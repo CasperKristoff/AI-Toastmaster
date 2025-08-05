@@ -31,6 +31,14 @@ interface SlideData {
   jeopardyCategories?: any[];
 }
 
+interface TileState {
+  [key: string]: 'hidden' | 'question' | 'answer' | 'completed';
+}
+
+interface TileOriginalState {
+  [key: string]: boolean; // true if originally completed
+}
+
 function PresentationPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -42,10 +50,69 @@ function PresentationPageContent() {
   const [showFunFactAnswer, setShowFunFactAnswer] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showFullScreenPrompt, setShowFullScreenPrompt] = useState(false);
+  
+  // Jeopardy state persistence
+  const [jeopardyTileStates, setJeopardyTileStates] = useState<TileState>({});
+  const [jeopardyOriginalCompletedStates, setJeopardyOriginalCompletedStates] = useState<TileOriginalState>({});
+  const [jeopardyInitialized, setJeopardyInitialized] = useState(false);
 
   // Get event ID from URL parameters
   const eventId = searchParams.get('eventId');
   const startIndex = parseInt(searchParams.get('startIndex') || '0');
+
+  // Initialize Jeopardy state from localStorage or create new
+  const initializeJeopardyState = useCallback((categories: any[]) => {
+    if (!eventId) return;
+    
+    const storageKey = `jeopardy-state-${eventId}`;
+    const savedState = localStorage.getItem(storageKey);
+    
+    if (savedState) {
+      try {
+        const parsedState = JSON.parse(savedState);
+        setJeopardyTileStates(parsedState.tileStates || {});
+        setJeopardyOriginalCompletedStates(parsedState.originalCompletedStates || {});
+      } catch (error) {
+        console.error('Error parsing saved Jeopardy state:', error);
+        // Fallback to fresh state
+        const initialStates: TileState = {};
+        const initialCompletedStates: TileOriginalState = {};
+        categories.forEach(category => {
+          category.questions.forEach((question: any) => {
+            initialStates[question.id] = 'hidden';
+            initialCompletedStates[question.id] = false;
+          });
+        });
+        setJeopardyTileStates(initialStates);
+        setJeopardyOriginalCompletedStates(initialCompletedStates);
+      }
+    } else {
+      // Create fresh state
+      const initialStates: TileState = {};
+      const initialCompletedStates: TileOriginalState = {};
+      categories.forEach(category => {
+        category.questions.forEach((question: any) => {
+          initialStates[question.id] = 'hidden';
+          initialCompletedStates[question.id] = false;
+        });
+      });
+      setJeopardyTileStates(initialStates);
+      setJeopardyOriginalCompletedStates(initialCompletedStates);
+    }
+  }, [eventId]);
+
+  // Save Jeopardy state to localStorage
+  const saveJeopardyState = useCallback((tileStates: TileState, originalCompletedStates: TileOriginalState) => {
+    if (!eventId) return;
+    
+    const storageKey = `jeopardy-state-${eventId}`;
+    const stateToSave = {
+      tileStates,
+      originalCompletedStates,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+  }, [eventId]);
 
   // Full-screen management
   const enterFullScreen = useCallback(async () => {
@@ -173,6 +240,29 @@ function PresentationPageContent() {
     fetchEvent();
   }, [eventId, user, loading, router, startIndex]);
 
+  // Initialize Jeopardy state when event is loaded
+  useEffect(() => {
+    if (event && !jeopardyInitialized) {
+      // Find Jeopardy segments and initialize state
+      const jeopardySegments = event.timeline.filter(
+        segment => segment.type === 'game' && segment.title === 'Jeopardy'
+      );
+      
+      if (jeopardySegments.length > 0) {
+        try {
+          const jeopardyData = JSON.parse(jeopardySegments[0].content);
+          const categories = jeopardyData.categories || [];
+          if (categories.length > 0) {
+            initializeJeopardyState(categories);
+            setJeopardyInitialized(true);
+          }
+        } catch (error) {
+          console.error('Error parsing Jeopardy data for initialization:', error);
+        }
+      }
+    }
+  }, [event, jeopardyInitialized, initializeJeopardyState]);
+
   // Helper functions
   const formatTime = (time: string) => {
     return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
@@ -255,13 +345,15 @@ function PresentationPageContent() {
       else if (segment.type === 'game' && segment.title === 'Jeopardy') {
         try {
           const jeopardyData = JSON.parse(segment.content);
+          const categories = jeopardyData.categories || [];
+          
           slides.push({
             type: 'jeopardy',
             title: 'Jeopardy',
             subtitle: `${segment.duration} minutes`,
             description: segment.description,
             duration: segment.duration,
-            jeopardyCategories: jeopardyData.categories || [],
+            jeopardyCategories: categories,
             speakerNotes: `Click on any tile to reveal the question. Click again to show the answer. Mark as complete when done.`
           });
         } catch (error) {
@@ -634,6 +726,11 @@ function PresentationPageContent() {
             {currentSlide.type === 'jeopardy' && (
               <JeopardyPresentation
                 categories={currentSlide.jeopardyCategories || []}
+                tileStates={jeopardyTileStates}
+                setTileStates={setJeopardyTileStates}
+                originalCompletedStates={jeopardyOriginalCompletedStates}
+                setOriginalCompletedStates={setJeopardyOriginalCompletedStates}
+                onStateChange={saveJeopardyState}
               />
             )}
           </div>

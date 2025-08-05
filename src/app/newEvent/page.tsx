@@ -270,7 +270,7 @@ function NewEventPageContent() {
   if (isCreateMode) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-deep-sea/5 via-white to-kimchi/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
             <div>
@@ -286,9 +286,7 @@ function NewEventPageContent() {
           </div>
 
           {/* EventCreationForm */}
-          <div className="bg-white/50 backdrop-blur-xl rounded-2xl p-8 border border-dark-royalty/10">
-            <EventCreationForm onEventCreated={handleEventCreated} />
-          </div>
+          <EventCreationForm onEventCreated={handleEventCreated} />
         </div>
       </div>
     );
@@ -328,10 +326,10 @@ function NewEventPageContent() {
 
   return (
       <div className="min-h-screen bg-gradient-to-br from-deep-sea/5 via-white to-kimchi/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
       {/* Top Navigation Bar */}
         <nav className="bg-white/80 backdrop-blur-xl border-b border-dark-royalty/10 px-6 py-4 relative mb-8">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+        <div className="w-full flex justify-between items-center">
           <div className="flex items-center">
             <button
               onClick={() => router.push('/ProfilePage')}
@@ -354,7 +352,7 @@ function NewEventPageContent() {
           </div>
 
           {/* Tab Content */}
-          <div className="bg-white/50 backdrop-blur-xl rounded-2xl p-8 border border-dark-royalty/10">
+          <div className="bg-white/50 backdrop-blur-xl rounded-2xl p-8 border border-dark-royalty/10 w-full max-w-none">
             {activeTab === 'overview' && event && (
               <Overview event={event} />
             )}
