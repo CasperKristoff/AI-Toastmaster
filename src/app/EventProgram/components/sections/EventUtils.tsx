@@ -15,44 +15,22 @@ export const formatTime = (time: string) => {
   });
 };
 
-export const getEventTypeIcon = (type: string) => {
-  const icons = {
-    bachelor: "🕺",
-    theme: "🎭",
-    house: "🍻",
-    roast: "🎂",
-    prom: "👑",
-    trivia: "🧠",
-    glowup: "🔥",
-    breakup: "💔",
-  };
-  return icons[type as keyof typeof icons] || "🎊";
+export const getEventTypeIcon = () => {
+  return "🎊";
 };
 
-export const getEventTypeLabel = (type: string) => {
-  const labels = {
-    bachelor: "Bachelor(ette) Party",
-    theme: "Theme Party",
-    house: "House Party",
-    roast: "Roast Night",
-    prom: "Prom or Formal",
-    trivia: "Trivia Night",
-    glowup: "Glow-Up Party",
-    breakup: "Breakup Bash",
-  };
-  return labels[type as keyof typeof labels] || "Event";
+export const getEventTypeLabel = () => {
+  return "Event";
 };
 
 export const getToneLabel = (tone: string) => {
   const labels = {
-    formal: "Formal & Elegant",
-    casual: "Casual & Relaxed",
-    party: "High Energy Party",
-    professional: "Professional",
-    wholesome: "Family-Friendly",
-    roast: "Playful & Humorous",
+    safe: "Safe & Light",
+    wild: "Wild & Edgy",
+    "family-friendly": "Family-Friendly",
+    corporate: "Corporate & Professional",
   };
-  return labels[tone as keyof typeof labels] || tone;
+  return labels[tone as keyof typeof labels] || "Safe & Light";
 };
 
 // Utility function to remove undefined values from objects

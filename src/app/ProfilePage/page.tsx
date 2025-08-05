@@ -297,25 +297,7 @@ function ProfilePageContent() {
                       )}
                       {/* Card Content */}
                       <div className="flex items-center space-x-4">
-                        <span className="text-3xl">
-                          {event.type === "house"
-                            ? "🍻"
-                            : event.type === "bachelor"
-                              ? "🕺"
-                              : event.type === "theme"
-                                ? "🎭"
-                                : event.type === "roast"
-                                  ? "🎂"
-                                  : event.type === "prom"
-                                    ? "👑"
-                                    : event.type === "trivia"
-                                      ? "🧠"
-                                      : event.type === "glowup"
-                                        ? "🔥"
-                                        : event.type === "breakup"
-                                          ? "💔"
-                                          : "🎊"}
-                        </span>
+                        <span className="text-3xl">🎊</span>
                         <div className="flex-1 min-w-0">
                           <h4 className="text-2xl font-bold text-dark-royalty truncate mb-2">
                             {event.name}

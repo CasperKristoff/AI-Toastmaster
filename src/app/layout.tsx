@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Juvo PDF Processing",
-  description: "Professional PDF processing solution by Juvo",
+  title: "AI Toastmaster",
+  description: "Your Smart Sidekick for Events",
   icons: {
     icon: "/favicon.ico",
   },

@@ -35,42 +35,16 @@ export default function PresentationPreview({
     });
   };
 
-  const getEventTypeLabel = (type: string) => {
-    const labels = {
-      bachelor: "Bachelor(ette) Party",
-      theme: "Theme Party",
-      house: "House Party",
-      roast: "Roast Night",
-      prom: "Prom or Formal",
-      trivia: "Trivia Night",
-      glowup: "Glow-Up Party",
-      breakup: "Breakup Bash",
-    };
-    return labels[type as keyof typeof labels] || "Event";
+  const getEventTypeLabel = () => {
+    return "Event";
   };
 
-  const getToneLabel = (tone: string) => {
-    const labels = {
-      formal: "Formal & Elegant",
-      casual: "Casual & Relaxed",
-      party: "High Energy Party",
-      professional: "Professional",
-      wholesome: "Family-Friendly",
-      roast: "Playful & Humorous",
-    };
-    return labels[tone as keyof typeof labels] || tone;
+  const getToneLabel = () => {
+    return "Event";
   };
 
   const getSlideBackground = () => {
-    const toneGradients = {
-      formal: "from-blue-50 via-white to-indigo-50",
-      casual: "from-green-50 via-white to-emerald-50",
-      party: "from-purple-50 via-white to-pink-50",
-      professional: "from-gray-50 via-white to-slate-50",
-      wholesome: "from-pink-50 via-white to-rose-50",
-      roast: "from-orange-50 via-white to-red-50",
-    };
-    return `bg-gradient-to-br ${toneGradients[event.tone as keyof typeof toneGradients] || "from-deep-sea/10 via-white to-kimchi/10"}`;
+    return "bg-gradient-to-br from-deep-sea/10 via-white to-kimchi/10";
   };
 
   // Generate slides from event data
@@ -82,7 +56,7 @@ export default function PresentationPreview({
       type: "title",
       title: event.name,
       subtitle: `Kickoff: ${formatTime(event.startTime)}`,
-      description: `${getEventTypeLabel(event.type)} • ${getToneLabel(event.tone)}`,
+      description: `${getEventTypeLabel()} • ${getToneLabel()}`,
     });
 
     // Segment slides
@@ -257,18 +231,6 @@ export default function PresentationPreview({
             <span className="text-deep-sea/60">Total Slides:</span>
             <span className="ml-2 font-medium text-dark-royalty">
               {slides.length}
-            </span>
-          </div>
-          <div>
-            <span className="text-deep-sea/60">Event Type:</span>
-            <span className="ml-2 font-medium text-dark-royalty">
-              {getEventTypeLabel(event.type)}
-            </span>
-          </div>
-          <div>
-            <span className="text-deep-sea/60">Tone:</span>
-            <span className="ml-2 font-medium text-dark-royalty">
-              {getToneLabel(event.tone)}
             </span>
           </div>
         </div>

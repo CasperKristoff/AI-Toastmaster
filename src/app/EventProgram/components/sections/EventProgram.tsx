@@ -184,9 +184,6 @@ interface EventProgramProps {
   handleCancelKickoff: () => void;
   formatTime: (time: string) => string;
   formatDate: (date: Date) => string;
-  getEventTypeIcon: (type: string) => string;
-  getEventTypeLabel: (type: string) => string;
-  getToneLabel: (tone: string) => string;
   handleClickOutside: () => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sensors: SensorDescriptor<any>[];
@@ -209,9 +206,6 @@ const EventProgram: React.FC<EventProgramProps> = ({
   handleCancelKickoff,
   formatTime,
   formatDate,
-  getEventTypeIcon,
-  getEventTypeLabel,
-  getToneLabel,
   handleClickOutside,
   sensors,
   handleDragEnd,
@@ -269,45 +263,6 @@ const EventProgram: React.FC<EventProgramProps> = ({
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-dark-royalty to-deep-sea bg-clip-text text-transparent">
               {event.name || "Your Event Name"}
             </h1>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="group bg-white/90 backdrop-blur-xl rounded-2xl p-6 border-2 border-dark-royalty/10 hover:border-dark-royalty/30 transition-all duration-300 hover:shadow-xl hover:scale-105 cursor-pointer">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="text-4xl animate-pulse">🎭</div>
-                <div>
-                  <h3 className="text-lg font-bold text-dark-royalty mb-1">
-                    Event Tone
-                  </h3>
-                  <p className="text-deep-sea/70 font-medium">
-                    {getToneLabel(event.tone)}
-                  </p>
-                </div>
-              </div>
-              <div className="px-4 py-2 bg-gradient-to-r from-dark-royalty to-deep-sea text-white rounded-full text-sm font-bold shadow-lg">
-                {event.tone}
-              </div>
-            </div>
-          </div>
-
-          <div className="group bg-white/90 backdrop-blur-xl rounded-2xl p-6 border-2 border-dark-royalty/10 hover:border-dark-royalty/30 transition-all duration-300 hover:shadow-xl hover:scale-105 cursor-pointer">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="text-4xl animate-bounce">
-                  {getEventTypeIcon(event.type)}
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-dark-royalty mb-1">
-                    Event Type
-                  </h3>
-                  <p className="text-deep-sea/70 font-medium">
-                    {getEventTypeLabel(event.type)}
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 

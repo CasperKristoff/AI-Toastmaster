@@ -4,6 +4,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  getDoc,
   getDocs,
   query,
   where,
@@ -166,20 +167,16 @@ export const eventService: EventService = {
   // Get a specific event by ID
   async getEvent(eventId: string): Promise<Event | null> {
     try {
-      const eventDoc = await getDocs(
-        query(
-          collection(db, EVENTS_COLLECTION),
-          where("__name__", "==", eventId),
-        ),
-      );
+      const eventRef = doc(db, EVENTS_COLLECTION, eventId);
+      const eventDoc = await getDoc(eventRef);
 
-      if (eventDoc.empty) {
+      if (!eventDoc.exists()) {
         return null;
       }
 
-      const data = eventDoc.docs[0].data();
+      const data = eventDoc.data();
       return {
-        id: eventDoc.docs[0].id,
+        id: eventDoc.id,
         ...data,
         createdAt: toDateSafe(data.createdAt),
         updatedAt: toDateSafe(data.updatedAt),

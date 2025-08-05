@@ -16,9 +16,35 @@ const openai = process.env.OPENAI_API_KEY
 
 export async function POST(request: NextRequest) {
   try {
-    const { prompt, categories, boardSize = 5 } = await request.json();
+    const {
+      prompt,
+      categories,
+      boardSize = 5,
+      eventName,
+      eventDescription,
+      eventTone,
+    } = await request.json();
+
+    // Create tone-specific instructions
+    const toneInstructions = {
+      safe: "Keep questions light, fun, and universally appealing. Use gentle humor and avoid controversial topics.",
+      wild: "Make questions more edgy and party-focused. Include pop culture references and adult humor while keeping it fun.",
+      "family-friendly":
+        "Focus on kid-appropriate content. Use educational topics, family movies, and wholesome references.",
+      corporate:
+        "Keep questions professional and office-appropriate. Focus on business, current events, and clean humor.",
+    };
+
+    const toneInstruction =
+      toneInstructions[eventTone as keyof typeof toneInstructions] ||
+      toneInstructions.safe;
 
     const systemPrompt = `You are an expert Jeopardy game creator. Create engaging, fun, and appropriate questions for a Jeopardy game.
+
+EVENT CONTEXT:
+- Event Name: ${eventName || "General Event"}
+- Event Description: ${eventDescription || "No specific description provided"}
+- Event Tone: ${eventTone || "safe"} - ${toneInstruction}
 
 CRITICAL REQUIREMENTS:
 - You MUST create exactly ${boardSize} categories (no more, no less)
@@ -29,7 +55,7 @@ Key requirements:
 - Questions should follow Jeopardy format: the host reads an "answer" and players respond with the "question"
 - Questions should start with "What is...", "Who is...", "Where is...", etc.
 - Difficulty should increase with point values (1 = easiest, ${boardSize} = hardest)
-- Keep questions family-friendly and engaging
+- Tailor the content and humor to match the event tone: ${toneInstruction}
 - Make sure answers are clear and unambiguous
 
 Current categories: ${categories?.map((c: { name: string }) => c.name).join(", ") || "None"}

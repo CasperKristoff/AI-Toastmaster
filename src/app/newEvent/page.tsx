@@ -24,9 +24,6 @@ import EventProgram from "../EventProgram/components/sections/EventProgram";
 import {
   formatTime,
   formatDate,
-  getEventTypeIcon,
-  getEventTypeLabel,
-  getToneLabel,
 } from "../EventProgram/components/sections/EventUtils";
 import { useEventHandlers } from "../EventProgram/components/sections/EventHandlers";
 import AddSegmentModal from "../EventProgram/components/sections/AddSegmentModal";
@@ -456,9 +453,6 @@ function NewEventPageContent() {
                 handleCancelKickoff={eventHandlers.handleCancelKickoff}
                 formatTime={formatTime}
                 formatDate={formatDate}
-                getEventTypeIcon={getEventTypeIcon}
-                getEventTypeLabel={getEventTypeLabel}
-                getToneLabel={getToneLabel}
                 handleClickOutside={eventHandlers.handleClickOutside}
                 sensors={sensors}
                 handleDragEnd={handleDragEnd}

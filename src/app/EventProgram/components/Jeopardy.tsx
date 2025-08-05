@@ -26,6 +26,7 @@ interface JeopardyProps {
 }
 
 const Jeopardy: React.FC<JeopardyProps> = ({
+  event,
   isOpen,
   onClose,
   onSave,
@@ -198,7 +199,10 @@ const Jeopardy: React.FC<JeopardyProps> = ({
           prompt,
           categories,
           boardSize,
-          eventType: "event", // You can make this dynamic based on the event
+          eventType: "event",
+          eventName: event.name,
+          eventDescription: event.description,
+          eventTone: event.tone,
         }),
       });
 

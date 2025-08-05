@@ -1,22 +1,8 @@
 // Event Types for AI Toastmaster
 
-export type EventType =
-  | "bachelor"
-  | "theme"
-  | "house"
-  | "roast"
-  | "prom"
-  | "trivia"
-  | "glowup"
-  | "breakup";
+export type EventType = "event";
 
-export type EventTone =
-  | "formal"
-  | "casual"
-  | "party"
-  | "professional"
-  | "wholesome"
-  | "roast";
+export type EventTone = "safe" | "wild" | "family-friendly" | "corporate";
 
 export type SegmentType =
   | "welcome"
@@ -25,7 +11,8 @@ export type SegmentType =
   | "toast"
   | "game"
   | "break"
-  | "closing";
+  | "closing"
+  | "poll";
 
 export interface Guest {
   id: string;
@@ -49,6 +36,7 @@ export interface EventSegment {
   guestsInvolved?: string[];
   notes?: string;
   personalFunFacts?: Record<string, string>; // guestId -> funFact
+  data?: Record<string, unknown>; // Additional data for specific segment types (e.g., poll data)
 }
 
 export interface Event {
@@ -60,6 +48,7 @@ export interface Event {
   startTime: string;
   duration: number;
   venue?: string;
+  description?: string;
   tone: EventTone;
   guests: Guest[];
   timeline: EventSegment[];

@@ -8,6 +8,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { SpinTheWheelPresentation } from "../EventProgram/components/SpinTheWheel";
 import SlideShowPresentation from "../EventProgram/components/SlideShowPresentation";
 import JeopardyPresentation from "../EventProgram/components/JeopardyPresentation";
+import Poll from "../EventProgram/components/Poll";
 
 interface SlideData {
   type:
@@ -17,7 +18,8 @@ interface SlideData {
     | "funfact"
     | "spinthewheel"
     | "slideshow"
-    | "jeopardy";
+    | "jeopardy"
+    | "poll";
   title: string;
   subtitle?: string;
   description?: string;
@@ -36,6 +38,16 @@ interface SlideData {
   photoUrls?: string[];
   // Jeopardy specific fields
   jeopardyCategories?: JeopardyCategory[];
+  // Poll specific fields
+  pollData?: {
+    question: string;
+    options: string[];
+    showResultsLive: boolean;
+    allowMultipleSelections: boolean;
+    sessionCode: string;
+    votes: Record<string, number>;
+    totalVotes: number;
+  };
 }
 
 interface TileState {
@@ -313,45 +325,16 @@ function PresentationPageContent() {
     });
   };
 
-  const getEventTypeLabel = (type: string) => {
-    const labels = {
-      bachelor: "Bachelor(ette) Party",
-      theme: "Theme Party",
-      house: "House Party",
-      roast: "Roast Night",
-      prom: "Prom or Formal",
-      trivia: "Trivia Night",
-      glowup: "Glow-Up Party",
-      breakup: "Breakup Bash",
-    };
-    return labels[type as keyof typeof labels] || "Event";
+  const getEventTypeLabel = () => {
+    return "Event";
   };
 
-  const getToneLabel = (tone: string) => {
-    const labels = {
-      formal: "Formal & Elegant",
-      casual: "Casual & Relaxed",
-      party: "High Energy Party",
-      professional: "Professional",
-      wholesome: "Family-Friendly",
-      roast: "Playful & Humorous",
-    };
-    return labels[tone as keyof typeof labels] || tone;
+  const getToneLabel = () => {
+    return "Event";
   };
 
   const getSlideBackground = () => {
-    if (!event)
-      return "bg-gradient-to-br from-deep-sea/10 via-white to-kimchi/10";
-
-    const toneGradients = {
-      formal: "from-blue-50 via-white to-indigo-50",
-      casual: "from-green-50 via-white to-emerald-50",
-      party: "from-purple-50 via-white to-pink-50",
-      professional: "from-gray-50 via-white to-slate-50",
-      wholesome: "from-pink-50 via-white to-rose-50",
-      roast: "from-orange-50 via-white to-red-50",
-    };
-    return `bg-gradient-to-br ${toneGradients[event.tone as keyof typeof toneGradients] || "from-deep-sea/10 via-white to-kimchi/10"}`;
+    return "bg-gradient-to-br from-deep-sea/10 via-white to-kimchi/10";
   };
 
   // Generate slides from event data
@@ -365,7 +348,7 @@ function PresentationPageContent() {
       type: "title",
       title: event.name,
       subtitle: `Kickoff: ${formatTime(event.startTime)}`,
-      description: `${getEventTypeLabel(event.type)} • ${getToneLabel(event.tone)}`,
+      description: `${getEventTypeLabel()} • ${getToneLabel()}`,
     });
 
     // Segment slides
@@ -426,6 +409,41 @@ function PresentationPageContent() {
           });
         } catch (error) {
           console.error("Error parsing slideshow data:", error);
+          slides.push({
+            type: "segment",
+            title: segment.title,
+            subtitle: `${segment.duration} minutes`,
+            description: segment.description,
+            duration: segment.duration,
+            segmentType: segment.type,
+            speakerNotes: segment.content || `Notes for ${segment.title}`,
+          });
+        }
+      }
+      // Special handling for Poll segments
+      else if (segment.type === "poll") {
+        try {
+          const pollData = segment.data as {
+            question: string;
+            options: string[];
+            showResultsLive: boolean;
+            allowMultipleSelections: boolean;
+            sessionCode: string;
+            votes: Record<string, number>;
+            totalVotes: number;
+          };
+
+          slides.push({
+            type: "poll",
+            title: "Live Poll",
+            subtitle: `${segment.duration} minutes`,
+            description: "",
+            duration: segment.duration,
+            pollData: pollData,
+            speakerNotes: `Guests can scan the QR code to vote. Results will update in real-time.`,
+          });
+        } catch (error) {
+          console.error("Error parsing poll data:", error);
           slides.push({
             type: "segment",
             title: segment.title,
@@ -718,49 +736,49 @@ function PresentationPageContent() {
         )}
 
         {/* Main Slide Content */}
-        <div className="h-full flex flex-col items-center justify-center p-8 relative">
+        <div className="h-full flex flex-col items-center justify-center p-12 relative">
           {/* Slide Number Indicator */}
-          <div className="absolute top-4 left-4 text-deep-sea/60 text-sm font-medium">
+          <div className="absolute top-6 left-6 text-deep-sea/60 text-sm font-medium">
             {currentSlideIndex + 1} / {slides.length}
           </div>
 
           {/* Slide Content */}
-          <div className="text-center w-full mx-auto px-2">
+          <div className="text-center w-full max-w-6xl mx-auto px-4">
             {/* Title */}
-            <h1 className="text-6xl font-bold text-dark-royalty mb-4 leading-tight">
+            <h1 className="text-7xl font-bold text-dark-royalty mb-8 leading-tight tracking-tight">
               {currentSlide.title}
             </h1>
 
             {/* Description */}
             {currentSlide.description && (
-              <p className="text-xl text-deep-sea/70 leading-relaxed max-w-2xl mx-auto">
+              <p className="text-2xl text-deep-sea/70 leading-relaxed max-w-3xl mx-auto mb-12">
                 {currentSlide.description}
               </p>
             )}
 
             {/* Fun Fact specific content */}
             {currentSlide.type === "funfact" && (
-              <div className="mt-8 space-y-6">
+              <div className="mt-12 space-y-10 max-w-4xl mx-auto">
                 {/* Fun Fact Display */}
-                <div className="bg-white/30 backdrop-blur-sm rounded-2xl p-8 border border-dark-royalty/20">
-                  <p className="text-2xl text-dark-royalty font-medium leading-relaxed">
+                <div className="bg-white/30 backdrop-blur-sm rounded-3xl p-10 border-2 border-dark-royalty/20 shadow-lg">
+                  <p className="text-3xl text-dark-royalty font-medium leading-relaxed">
                     &quot;{currentSlide.funFact}&quot;
                   </p>
                 </div>
 
                 {/* Answer Section */}
                 {showFunFactAnswer ? (
-                  <div className="bg-green-50/80 backdrop-blur-sm rounded-2xl p-6 border border-green-500/30 animate-pulse">
-                    <h3 className="text-3xl font-bold text-green-700 mb-2">
+                  <div className="bg-green-50/80 backdrop-blur-sm rounded-3xl p-8 border-2 border-green-500/30 animate-pulse shadow-lg">
+                    <h3 className="text-4xl font-bold text-green-700 mb-2">
                       {currentSlide.guestName}
                     </h3>
                   </div>
                 ) : (
-                  <div className="bg-yellow-50/80 backdrop-blur-sm rounded-2xl p-6 border border-yellow-500/30">
-                    <h3 className="text-xl font-bold text-yellow-700 mb-2">
+                  <div className="bg-yellow-50/80 backdrop-blur-sm rounded-3xl p-8 border-2 border-yellow-500/30 shadow-lg">
+                    <h3 className="text-2xl font-bold text-yellow-700 mb-4">
                       Take Your Guess!
                     </h3>
-                    <p className="text-lg text-yellow-600">
+                    <p className="text-xl text-yellow-600">
                       Discuss with the group and try to guess who this fun fact
                       belongs to!
                     </p>
@@ -768,10 +786,10 @@ function PresentationPageContent() {
                 )}
 
                 {/* Controls */}
-                <div className="flex justify-center space-x-4">
+                <div className="flex justify-center space-x-6 mt-8">
                   <button
                     onClick={toggleFunFactAnswer}
-                    className={`px-6 py-3 rounded-xl transition-all duration-300 font-medium ${
+                    className={`px-8 py-4 rounded-2xl transition-all duration-300 font-medium text-lg shadow-lg ${
                       showFunFactAnswer
                         ? "bg-yellow-500 text-white hover:bg-yellow-600"
                         : "bg-green-500 text-white hover:bg-green-600"
@@ -807,21 +825,41 @@ function PresentationPageContent() {
                 onStateChange={saveJeopardyState}
               />
             )}
+
+            {/* Poll specific content */}
+            {currentSlide.type === "poll" && currentSlide.pollData && (
+              <Poll
+                segment={{
+                  id: "presentation-poll",
+                  title: "Live Poll",
+                  type: "poll",
+                  description: currentSlide.description || "",
+                  duration: currentSlide.duration || 10,
+                  content: "",
+                  order: 0,
+                  data: currentSlide.pollData,
+                }}
+                event={event}
+                isEditMode={false}
+              />
+            )}
           </div>
 
           {/* Presenter Notes Overlay */}
           {showPresenterNotes && currentSlide.speakerNotes && (
-            <div className="absolute bottom-20 left-4 right-4 bg-black/80 text-white p-6 rounded-xl backdrop-blur-sm">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-lg font-bold">Presenter Notes</h3>
+            <div className="absolute bottom-24 left-8 right-8 bg-black/85 text-white p-8 rounded-2xl backdrop-blur-md shadow-2xl border border-white/10">
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-xl font-bold tracking-wide">
+                  Presenter Notes
+                </h3>
                 <button
                   onClick={togglePresenterNotes}
-                  className="text-white/60 hover:text-white"
+                  className="text-white/60 hover:text-white text-2xl transition-colors duration-200"
                 >
                   ×
                 </button>
               </div>
-              <p className="text-sm leading-relaxed">
+              <p className="text-base leading-relaxed tracking-wide">
                 {currentSlide.speakerNotes}
               </p>
             </div>
@@ -834,19 +872,20 @@ function PresentationPageContent() {
           <button
             onClick={goToPreviousSlide}
             disabled={currentSlideIndex === 0}
-            className={`absolute left-4 top-1/2 transform -translate-y-1/2 pointer-events-auto transition-all duration-300 ${
+            className={`absolute left-8 top-1/2 transform -translate-y-1/2 pointer-events-auto transition-all duration-300 bg-white/20 hover:bg-white/30 backdrop-blur-sm p-4 rounded-2xl shadow-lg ${
               currentSlideIndex === 0
-                ? "text-gray-300 cursor-not-allowed"
-                : "text-gray-500 hover:text-gray-700 hover:scale-110"
+                ? "opacity-30 cursor-not-allowed"
+                : "hover:scale-110"
             }`}
           >
             <svg
-              width="32"
-              height="32"
+              width="40"
+              height="40"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
+              className="text-dark-royalty"
             >
               <path d="M15 18l-6-6 6-6" />
             </svg>
@@ -856,19 +895,20 @@ function PresentationPageContent() {
           <button
             onClick={goToNextSlide}
             disabled={currentSlideIndex === slides.length - 1}
-            className={`absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-auto transition-all duration-300 ${
+            className={`absolute right-8 top-1/2 transform -translate-y-1/2 pointer-events-auto transition-all duration-300 bg-white/20 hover:bg-white/30 backdrop-blur-sm p-4 rounded-2xl shadow-lg ${
               currentSlideIndex === slides.length - 1
-                ? "text-gray-300 cursor-not-allowed"
-                : "text-gray-500 hover:text-gray-700 hover:scale-110"
+                ? "opacity-30 cursor-not-allowed"
+                : "hover:scale-110"
             }`}
           >
             <svg
-              width="32"
-              height="32"
+              width="40"
+              height="40"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
+              className="text-dark-royalty"
             >
               <path d="M9 18l6-6-6-6" />
             </svg>
@@ -877,15 +917,16 @@ function PresentationPageContent() {
           {/* Exit Button */}
           <button
             onClick={() => setShowExitModal(true)}
-            className="absolute top-4 right-4 pointer-events-auto text-gray-500 hover:text-gray-700 hover:scale-110 transition-all duration-300"
+            className="absolute top-6 right-6 pointer-events-auto bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 rounded-xl shadow-lg transition-all duration-300 hover:scale-110"
           >
             <svg
-              width="24"
-              height="24"
+              width="28"
+              height="28"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
+              className="text-dark-royalty"
             >
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>

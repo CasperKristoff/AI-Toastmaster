@@ -14,80 +14,11 @@ export default function EventCreationForm({
 }: EventCreationFormProps) {
   const [formData, setFormData] = useState({
     name: "",
-    type: "" as EventType,
-    tone: "" as EventTone,
+    description: "",
+    tone: "safe" as EventTone,
     date: "",
     startTime: "18:00",
   });
-
-  const eventTypes: { value: EventType; label: string; description: string }[] =
-    [
-      {
-        value: "bachelor",
-        label: "🕺 Bachelor(ette) Party",
-        description: "Pre-wedding chaos and bonding.",
-      },
-      {
-        value: "theme",
-        label: "🎭 Theme Party",
-        description:
-          "From 1920s speakeasy to Y2K rave – full immersion recommended.",
-      },
-      {
-        value: "house",
-        label: "🍻 House Party",
-        description:
-          "Your place, your rules – AI helps keep things (slightly) under control.",
-      },
-      {
-        value: "roast",
-        label: "🎂 Roast Night",
-        description: "One guest, all the heat. AI writes the jokes.",
-      },
-      {
-        value: "prom",
-        label: "👑 Prom or Formal",
-        description: "Elegance, drama, and awkward dancing encouraged.",
-      },
-      {
-        value: "trivia",
-        label: "🧠 Trivia Night",
-        description: "Full of quizzes, points, and petty competition.",
-      },
-      {
-        value: "glowup",
-        label: "🔥 Glow-Up Party",
-        description:
-          "Celebrating a transformation – birthdays, breakups, or bold life changes.",
-      },
-      {
-        value: "breakup",
-        label: "💔 Breakup Bash",
-        description: "Closure, cocktails, and controlled chaos.",
-      },
-    ];
-
-  const eventTones: { value: EventTone; label: string; description: string }[] =
-    [
-      {
-        value: "formal",
-        label: "Formal",
-        description: "Elegant and sophisticated",
-      },
-      { value: "casual", label: "Casual", description: "Relaxed and friendly" },
-      { value: "party", label: "Party", description: "High energy and fun" },
-      {
-        value: "professional",
-        label: "Professional",
-        description: "Business appropriate",
-      },
-      {
-        value: "wholesome",
-        label: "Wholesome",
-        description: "Family-friendly and warm",
-      },
-      { value: "roast", label: "Roast", description: "Playful and humorous" },
-    ];
 
   const handleInputChange = (field: string, value: string | number) => {
     setFormData((prev) => ({
@@ -103,11 +34,12 @@ export default function EventCreationForm({
     const newEvent: Omit<Event, "id" | "createdAt" | "updatedAt"> = {
       userId: "current-user", // will be set by the service
       name: formData.name,
-      type: formData.type as EventType,
+      type: "event" as EventType,
       date: new Date(formData.date), // use selected date
       startTime: formData.startTime, // use selected time
       duration: 120, // default 2 hours
       venue: "", // empty venue
+      description: formData.description, // use description field
       tone: formData.tone as EventTone,
       guests: [],
       timeline: [],
@@ -159,6 +91,59 @@ export default function EventCreationForm({
                 </div>
               </div>
 
+              {/* Event Description */}
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="description"
+                    className="block text-sm font-medium text-deep-sea mb-2"
+                  >
+                    Event Description
+                  </label>
+                  <textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) =>
+                      handleInputChange("description", e.target.value)
+                    }
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-xl border border-dark-royalty/20 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 focus:border-transparent transition-all duration-300 resize-none"
+                    placeholder="Describe your event, what guests can expect, or any special details..."
+                  />
+                </div>
+              </div>
+
+              {/* Event Tone */}
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="tone"
+                    className="block text-sm font-medium text-deep-sea mb-2"
+                  >
+                    Event Tone *
+                  </label>
+                  <select
+                    id="tone"
+                    value={formData.tone}
+                    onChange={(e) => handleInputChange("tone", e.target.value)}
+                    required
+                    className="w-full px-4 py-3 rounded-xl border border-dark-royalty/20 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 focus:border-transparent transition-all duration-300"
+                  >
+                    <option value="">Select a tone...</option>
+                    <option value="safe">
+                      Safe - General-purpose light humor
+                    </option>
+                    <option value="wild">Wild - Edgy party-style humor</option>
+                    <option value="family-friendly">
+                      Family-Friendly - Kid-appropriate fun
+                    </option>
+                    <option value="corporate">
+                      Corporate - Clean, office-safe phrasing
+                    </option>
+                  </select>
+                </div>
+              </div>
+
               {/* Event Date and Time */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -198,69 +183,12 @@ export default function EventCreationForm({
                 </div>
               </div>
 
-              {/* Event Type */}
-              <div className="space-y-4">
-                <label className="block text-sm font-medium text-deep-sea mb-4">
-                  Event Type *
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {eventTypes.map((type) => (
-                    <button
-                      key={type.value}
-                      type="button"
-                      onClick={() => handleInputChange("type", type.value)}
-                      className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${
-                        formData.type === type.value
-                          ? "border-dark-royalty bg-dark-royalty/10"
-                          : "border-dark-royalty/20 hover:border-dark-royalty/40"
-                      }`}
-                    >
-                      <div className="font-medium text-dark-royalty">
-                        {type.label}
-                      </div>
-                      <div className="text-sm text-deep-sea/60">
-                        {type.description}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Event Tone */}
-              <div className="space-y-4">
-                <label className="block text-sm font-medium text-deep-sea mb-4">
-                  Event Tone *
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {eventTones.map((tone) => (
-                    <button
-                      key={tone.value}
-                      type="button"
-                      onClick={() => handleInputChange("tone", tone.value)}
-                      className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${
-                        formData.tone === tone.value
-                          ? "border-dark-royalty bg-dark-royalty/10"
-                          : "border-dark-royalty/20 hover:border-dark-royalty/40"
-                      }`}
-                    >
-                      <div className="font-medium text-dark-royalty">
-                        {tone.label}
-                      </div>
-                      <div className="text-sm text-deep-sea/60">
-                        {tone.description}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {/* Submit button */}
               <div className="flex justify-center pt-6">
                 <button
                   type="submit"
                   disabled={
                     !formData.name ||
-                    !formData.type ||
                     !formData.tone ||
                     !formData.date ||
                     !formData.startTime

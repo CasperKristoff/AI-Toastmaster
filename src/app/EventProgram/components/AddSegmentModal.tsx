@@ -147,6 +147,7 @@ const AddSegmentModal: React.FC<AddSegmentModalProps> = ({
               <option value="activity">Activity</option>
               <option value="toast">Toast</option>
               <option value="game">Game</option>
+              <option value="poll">Live Poll</option>
               <option value="break">Break</option>
               <option value="closing">Closing</option>
             </select>

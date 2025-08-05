@@ -4,6 +4,7 @@ import PersonalFunfact from "../PersonalFunfact";
 import SpinTheWheel from "../SpinTheWheel";
 import SlideShow from "../SlideShow";
 import Jeopardy from "../Jeopardy";
+import Poll from "../Poll";
 import Modal from "../../../../components/Modal";
 
 interface AISegmentsProps {
@@ -27,6 +28,7 @@ const AISegments: React.FC<AISegmentsProps> = ({
   const [showSpinTheWheelModal, setShowSpinTheWheelModal] = useState(false);
   const [showSlideShowModal, setShowSlideShowModal] = useState(false);
   const [showJeopardyModal, setShowJeopardyModal] = useState(false);
+  const [showPollModal, setShowPollModal] = useState(false);
 
   const handleSavePersonalFacts = (funFacts: Record<string, string>) => {
     setPersonalFunFacts(funFacts);
@@ -70,6 +72,13 @@ const AISegments: React.FC<AISegmentsProps> = ({
 
   const handleSaveJeopardy = (segment: EventSegment) => {
     setShowJeopardyModal(false);
+    onAddSegment(segment);
+    // Close the main AI segments modal and return to EventProgram
+    onClose();
+  };
+
+  const handleSavePoll = (segment: EventSegment) => {
+    setShowPollModal(false);
     onAddSegment(segment);
     // Close the main AI segments modal and return to EventProgram
     onClose();
@@ -192,6 +201,27 @@ const AISegments: React.FC<AISegmentsProps> = ({
                   </div>
                 </div>
               </div>
+              <div
+                className="group bg-gradient-to-br from-green-100 to-teal-100 backdrop-blur-sm rounded-lg p-6 border border-dark-royalty/10 hover:border-dark-royalty/30 transition-all duration-300 hover:shadow-lg cursor-pointer"
+                onClick={() => setShowPollModal(true)}
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="text-3xl group-hover:scale-110 transition-transform duration-300">
+                    📊
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-dark-royalty mb-1">
+                      Live Poll
+                    </h3>
+                    <p className="text-deep-sea/70 text-sm">
+                      Real-time voting with live results
+                    </p>
+                  </div>
+                  <div className="text-2xl text-deep-sea/40 group-hover:text-dark-royalty transition-colors">
+                    ➕
+                  </div>
+                </div>
+              </div>
             </>
           )}
         </div>
@@ -228,6 +258,47 @@ const AISegments: React.FC<AISegmentsProps> = ({
         onClose={() => setShowJeopardyModal(false)}
         onSave={handleSaveJeopardy}
       />
+      {/* Poll Modal - Rendered outside the AISegments modal */}
+      <Modal
+        isOpen={showPollModal}
+        onClose={() => setShowPollModal(false)}
+        title="Create Live Poll"
+        onSave={() => {
+          // The poll data will be saved through the Poll component's save button
+          // This modal save is just a fallback
+        }}
+        saveDisabled={false}
+      >
+        <Poll
+          segment={{
+            id: Date.now().toString(),
+            title: "Live Poll",
+            type: "poll",
+            description: "Real-time voting with live results",
+            duration: 10,
+            content: "Guests can vote via QR code or URL",
+            order: 0,
+            data: {
+              question: "Who should take a shot?",
+              options: ["Option 1", "Option 2", "Option 3"],
+              showResultsLive: true,
+              allowMultipleSelections: false,
+              sessionCode: Math.random()
+                .toString(36)
+                .substring(2, 8)
+                .toUpperCase(),
+              votes: {},
+              totalVotes: 0,
+            },
+          }}
+          event={event}
+          isEditMode={true}
+          onUpdate={(updatedSegment) => {
+            // Save the poll segment to the event program
+            handleSavePoll(updatedSegment);
+          }}
+        />
+      </Modal>
     </>
   );
 };
