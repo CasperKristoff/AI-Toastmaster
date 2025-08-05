@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import Modal from '../../../components/Modal';
-import { Guest } from '../../../types/event';
+import React, { useState, useEffect } from "react";
+import Modal from "../../../components/Modal";
+import { Guest } from "../../../types/event";
 
 interface SpinTheWheelProps {
   guests: Guest[];
@@ -11,7 +11,16 @@ interface SpinTheWheelProps {
 }
 
 // Colors for wheel segments
-const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'];
+const colors = [
+  "#FF6B6B",
+  "#4ECDC4",
+  "#45B7D1",
+  "#96CEB4",
+  "#FFEAA7",
+  "#DDA0DD",
+  "#98D8C8",
+  "#F7DC6F",
+];
 
 // Helper function to create wheel segments
 const createWheelSegments = (guests: Guest[]) => {
@@ -24,30 +33,32 @@ const createWheelSegments = (guests: Guest[]) => {
     const startAngle = index * segmentAngle;
     const endAngle = (index + 1) * segmentAngle;
     const midAngle = (startAngle + endAngle) / 2;
-    
+
     // Convert angles to radians
-    const startRad = (startAngle - 90) * Math.PI / 180;
-    const endRad = (endAngle - 90) * Math.PI / 180;
-    
+    const startRad = ((startAngle - 90) * Math.PI) / 180;
+    const endRad = ((endAngle - 90) * Math.PI) / 180;
+
     // Calculate path for segment
     const x1 = centerX + radius * Math.cos(startRad);
     const y1 = centerY + radius * Math.sin(startRad);
     const x2 = centerX + radius * Math.cos(endRad);
     const y2 = centerY + radius * Math.sin(endRad);
-    
+
     const largeArcFlag = segmentAngle > 180 ? 1 : 0;
-    
+
     const path = [
       `M ${centerX} ${centerY}`,
       `L ${x1} ${y1}`,
       `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
-      'Z'
-    ].join(' ');
+      "Z",
+    ].join(" ");
 
     // Calculate text position
     const textRadius = radius * 0.7;
-    const textX = centerX + textRadius * Math.cos((midAngle - 90) * Math.PI / 180);
-    const textY = centerY + textRadius * Math.sin((midAngle - 90) * Math.PI / 180);
+    const textX =
+      centerX + textRadius * Math.cos(((midAngle - 90) * Math.PI) / 180);
+    const textY =
+      centerY + textRadius * Math.sin(((midAngle - 90) * Math.PI) / 180);
 
     return {
       path,
@@ -55,13 +66,19 @@ const createWheelSegments = (guests: Guest[]) => {
       guest,
       textX,
       textY,
-      rotation: midAngle
+      rotation: midAngle,
     };
   });
 };
 
-const SpinTheWheel: React.FC<SpinTheWheelProps> = ({ guests, isOpen, onClose, onSave, initialChallenge }) => {
-  const [challenge, setChallenge] = useState(initialChallenge || '');
+const SpinTheWheel: React.FC<SpinTheWheelProps> = ({
+  guests,
+  isOpen,
+  onClose,
+  onSave,
+  initialChallenge,
+}) => {
+  const [challenge, setChallenge] = useState(initialChallenge || "");
 
   // Update challenge when initialChallenge changes (for editing mode)
   useEffect(() => {
@@ -72,15 +89,15 @@ const SpinTheWheel: React.FC<SpinTheWheelProps> = ({ guests, isOpen, onClose, on
 
   const handleSave = () => {
     onSave(challenge);
-    setChallenge('');
+    setChallenge("");
   };
 
   const segments = createWheelSegments(guests);
 
-    return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={onClose} 
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
       title="Spin The Wheel"
       onSave={handleSave}
       saveDisabled={!challenge.trim()}
@@ -88,16 +105,18 @@ const SpinTheWheel: React.FC<SpinTheWheelProps> = ({ guests, isOpen, onClose, on
     >
       <div className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-deep-sea mb-2">Challenge</label>
+          <label className="block text-sm font-medium text-deep-sea mb-2">
+            Challenge
+          </label>
           <input
             type="text"
             value={challenge}
-            onChange={e => setChallenge(e.target.value)}
+            onChange={(e) => setChallenge(e.target.value)}
             className="w-full px-4 py-2 rounded-xl border border-dark-royalty/20 bg-white/50 focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 focus:border-transparent transition-all duration-300"
             placeholder="Describe the challenge for the winner..."
           />
         </div>
-        
+
         <div className="flex flex-col items-center">
           {/* Wheel */}
           <div className="relative">
@@ -116,7 +135,11 @@ const SpinTheWheel: React.FC<SpinTheWheelProps> = ({ guests, isOpen, onClose, on
                     y={segment.textY}
                     textAnchor="middle"
                     dominantBaseline="middle"
-                    fill={segment.color === '#FFEAA7' || segment.color === '#96CEB4' ? '#333' : 'white'}
+                    fill={
+                      segment.color === "#FFEAA7" || segment.color === "#96CEB4"
+                        ? "#333"
+                        : "white"
+                    }
                     fontSize="12"
                     fontWeight="bold"
                     transform={`rotate(${segment.rotation}, ${segment.textX}, ${segment.textY})`}
@@ -125,7 +148,7 @@ const SpinTheWheel: React.FC<SpinTheWheelProps> = ({ guests, isOpen, onClose, on
                   </text>
                 </g>
               ))}
-              
+
               {/* Center circle */}
               <circle
                 cx="150"
@@ -136,13 +159,9 @@ const SpinTheWheel: React.FC<SpinTheWheelProps> = ({ guests, isOpen, onClose, on
                 strokeWidth="2"
               />
             </svg>
-            
- 
           </div>
-          
-
         </div>
-        
+
         <div className="flex justify-end pt-4 border-t border-dark-royalty/10">
           <button
             onClick={handleSave}
@@ -164,11 +183,9 @@ interface SpinTheWheelPresentationProps {
   onSpin?: () => void;
 }
 
-export const SpinTheWheelPresentation: React.FC<SpinTheWheelPresentationProps> = ({ 
-  challenge, 
-  guests, 
-  onSpin 
-}) => {
+export const SpinTheWheelPresentation: React.FC<
+  SpinTheWheelPresentationProps
+> = ({ challenge, guests, onSpin }) => {
   const [isSpinning, setIsSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [winner, setWinner] = useState<Guest | null>(null);
@@ -176,27 +193,27 @@ export const SpinTheWheelPresentation: React.FC<SpinTheWheelPresentationProps> =
 
   const spinWheel = () => {
     if (!guests || isSpinning) return;
-    
+
     setIsSpinning(true);
     setWinner(null);
-    
+
     // Random rotation (8-12 full spins + random segment)
     const spins = 8 + Math.random() * 4;
     const segmentAngle = 360 / guests.length;
-    
+
     // Select a random winner
     const randomSegment = Math.floor(Math.random() * guests.length);
-    
+
     // Calculate the angle needed to position the selected segment at the bottom
     // The bottom position is at 180 degrees (directly below the arrow)
     // We need to rotate the wheel so that the selected segment's center ends up at 180 degrees
     const segmentCenterAngle = randomSegment * segmentAngle + segmentAngle / 2;
     const targetAngle = 180; // Bottom position
     const finalAngle = spins * 360 + (targetAngle - segmentCenterAngle);
-    
+
     // Apply spinning animation with CSS transition
     setRotation(finalAngle);
-    
+
     // Stop spinning after 5 seconds and show winner
     setTimeout(() => {
       setIsSpinning(false);
@@ -213,7 +230,9 @@ export const SpinTheWheelPresentation: React.FC<SpinTheWheelPresentationProps> =
     <div className="mt-8 space-y-6">
       {/* Challenge Display */}
       <div className="bg-white/30 backdrop-blur-sm rounded-2xl p-8 border border-dark-royalty/20">
-        <h3 className="text-2xl font-bold text-dark-royalty mb-4">Challenge:</h3>
+        <h3 className="text-2xl font-bold text-dark-royalty mb-4">
+          Challenge:
+        </h3>
         <p className="text-xl text-dark-royalty font-medium leading-relaxed">
           {challenge}
         </p>
@@ -222,13 +241,15 @@ export const SpinTheWheelPresentation: React.FC<SpinTheWheelPresentationProps> =
       {/* Wheel */}
       <div className="flex flex-col items-center">
         <div className="relative">
-          <svg 
-            width="300" 
-            height="300" 
+          <svg
+            width="300"
+            height="300"
             className="mx-auto"
             style={{
               transform: `rotate(${rotation}deg)`,
-              transition: isSpinning ? 'transform 5s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none'
+              transition: isSpinning
+                ? "transform 5s cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+                : "none",
             }}
           >
             {/* Wheel segments */}
@@ -245,7 +266,11 @@ export const SpinTheWheelPresentation: React.FC<SpinTheWheelPresentationProps> =
                   y={segment.textY}
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  fill={segment.color === '#FFEAA7' || segment.color === '#96CEB4' ? '#333' : 'white'}
+                  fill={
+                    segment.color === "#FFEAA7" || segment.color === "#96CEB4"
+                      ? "#333"
+                      : "white"
+                  }
                   fontSize="12"
                   fontWeight="bold"
                   transform={`rotate(${segment.rotation}, ${segment.textX}, ${segment.textY})`}
@@ -254,7 +279,7 @@ export const SpinTheWheelPresentation: React.FC<SpinTheWheelPresentationProps> =
                 </text>
               </g>
             ))}
-            
+
             {/* Center circle */}
             <circle
               cx="150"
@@ -265,10 +290,8 @@ export const SpinTheWheelPresentation: React.FC<SpinTheWheelPresentationProps> =
               strokeWidth="2"
             />
           </svg>
-          
-
         </div>
-        
+
         {/* Spin Button */}
         <button
           onClick={spinWheel}
@@ -276,11 +299,11 @@ export const SpinTheWheelPresentation: React.FC<SpinTheWheelPresentationProps> =
           data-spin-wheel
           className={`px-8 py-4 rounded-xl transition-all duration-300 font-medium text-lg ${
             isSpinning
-              ? 'bg-gray-400 text-white cursor-not-allowed'
-              : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 hover:scale-105'
+              ? "bg-gray-400 text-white cursor-not-allowed"
+              : "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 hover:scale-105"
           }`}
         >
-          {isSpinning ? 'Spinning...' : 'Spin The Wheel! (S)'}
+          {isSpinning ? "Spinning..." : "Spin The Wheel! (S)"}
         </button>
       </div>
 
@@ -289,11 +312,13 @@ export const SpinTheWheelPresentation: React.FC<SpinTheWheelPresentationProps> =
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 max-w-md w-full border border-dark-royalty/20 shadow-2xl text-center">
             <div className="text-6xl mb-4 animate-bounce">🎉</div>
-            <h2 className="text-3xl font-bold text-dark-royalty mb-2">The winner is...</h2>
-            <h3 className="text-4xl font-bold text-purple-600 mb-6">{winner.name}</h3>
-            <p className="text-lg text-deep-sea/70 mb-6">
-              {challenge}
-            </p>
+            <h2 className="text-3xl font-bold text-dark-royalty mb-2">
+              The winner is...
+            </h2>
+            <h3 className="text-4xl font-bold text-purple-600 mb-6">
+              {winner.name}
+            </h3>
+            <p className="text-lg text-deep-sea/70 mb-6">{challenge}</p>
             <button
               onClick={() => setShowWinnerModal(false)}
               className="px-8 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-300 font-medium"

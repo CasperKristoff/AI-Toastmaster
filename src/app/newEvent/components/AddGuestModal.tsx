@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Event, Guest } from '../../../types/event';
+import React, { useState, useRef, useEffect } from "react";
+import { Event, Guest } from "../../../types/event";
 
 interface AddGuestModalProps {
   isOpen: boolean;
@@ -12,7 +12,7 @@ const AddGuestModal: React.FC<AddGuestModalProps> = ({
   isOpen,
   onClose,
   event,
-  onEventUpdate
+  onEventUpdate,
 }) => {
   const [guestName, setGuestName] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -30,25 +30,25 @@ const AddGuestModal: React.FC<AddGuestModalProps> = ({
     const newGuest: Guest = {
       id: Date.now().toString(),
       name: guestName.trim(),
-      relationship: "Guest"
+      relationship: "Guest",
     };
 
     const updatedEvent: Event = {
       ...event,
-      guests: [...event.guests, newGuest]
+      guests: [...event.guests, newGuest],
     };
 
     onEventUpdate(updatedEvent);
-    
+
     setGuestName("");
-    
+
     if (!addAnother) {
       onClose();
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && guestName.trim()) {
+    if (e.key === "Enter" && guestName.trim()) {
       e.preventDefault();
       handleAddGuest(true);
     }
@@ -65,7 +65,9 @@ const AddGuestModal: React.FC<AddGuestModalProps> = ({
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 max-w-md w-full border border-dark-royalty/20 shadow-2xl">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-dark-royalty">Add New Guest</h2>
+          <h2 className="text-2xl font-bold text-dark-royalty">
+            Add New Guest
+          </h2>
           <button
             onClick={handleClose}
             className="text-deep-sea/60 hover:text-dark-royalty transition-colors text-2xl"
@@ -73,7 +75,7 @@ const AddGuestModal: React.FC<AddGuestModalProps> = ({
             ×
           </button>
         </div>
-        
+
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-deep-sea mb-2">
@@ -90,7 +92,7 @@ const AddGuestModal: React.FC<AddGuestModalProps> = ({
             />
           </div>
         </div>
-        
+
         <div className="flex space-x-4 mt-8">
           <button
             onClick={handleClose}
@@ -111,4 +113,4 @@ const AddGuestModal: React.FC<AddGuestModalProps> = ({
   );
 };
 
-export default AddGuestModal; 
+export default AddGuestModal;

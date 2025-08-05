@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import Modal from '../../../components/Modal';
-import { Event, EventSegment } from '../../../types/event';
+import React, { useState, useEffect, useCallback } from "react";
+import Modal from "../../../components/Modal";
+import { Event, EventSegment } from "../../../types/event";
 
 interface JeopardyQuestion {
   id: string;
@@ -29,19 +29,64 @@ const Jeopardy: React.FC<JeopardyProps> = ({
   isOpen,
   onClose,
   onSave,
-  initialSegment
+  initialSegment,
 }) => {
   const [categories, setCategories] = useState<JeopardyCategory[]>([]);
-  const [editingQuestion, setEditingQuestion] = useState<JeopardyQuestion | null>(null);
+  const [editingQuestion, setEditingQuestion] =
+    useState<JeopardyQuestion | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [aiMessage, setAiMessage] = useState('');
-  const [userInput, setUserInput] = useState('');
+  const [aiMessage, setAiMessage] = useState("");
+  const [userInput, setUserInput] = useState("");
   const [boardSize, setBoardSize] = useState(5); // Default 5x5 board
   const [history, setHistory] = useState<JeopardyCategory[][]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const [savedStates, setSavedStates] = useState<{ name: string; categories: JeopardyCategory[]; timestamp: Date }[]>([]);
+  const [savedStates, setSavedStates] = useState<
+    { name: string; categories: JeopardyCategory[]; timestamp: Date }[]
+  >([]);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [saveName, setSaveName] = useState('');
+  const [saveName, setSaveName] = useState("");
+
+  const generateDefaultCategories = useCallback((size: number) => {
+    const defaultCategories: JeopardyCategory[] = [];
+    const categoryNames = [
+      "Event Trivia",
+      "Fun Facts",
+      "General Knowledge",
+      "Pop Culture",
+      "Science & Tech",
+      "History",
+      "Geography",
+      "Sports",
+      "Music",
+      "Movies",
+    ];
+
+    for (let i = 0; i < size; i++) {
+      const categoryName = categoryNames[i] || `Category ${i + 1}`;
+      const questions: JeopardyQuestion[] = [];
+
+      for (let j = 0; j < size; j++) {
+        const points = j + 1;
+        questions.push({
+          id: `${i + 1}-${j + 1}`,
+          answer: `This is the answer for ${points} point${points > 1 ? "s" : ""}`,
+          question: `What is the question for ${points} point${points > 1 ? "s" : ""}?`,
+          points: points,
+        });
+      }
+
+      defaultCategories.push({
+        id: (i + 1).toString(),
+        name: categoryName,
+        questions: questions,
+      });
+    }
+
+    setCategories(defaultCategories);
+    // Save initial state to history
+    setHistory([defaultCategories]);
+    setHistoryIndex(0);
+  }, []);
 
   // Load existing data when editing
   useEffect(() => {
@@ -59,51 +104,20 @@ const Jeopardy: React.FC<JeopardyProps> = ({
           setHistoryIndex(0);
         }
       } catch (error) {
-        console.error('Error parsing Jeopardy content:', error);
+        console.error("Error parsing Jeopardy content:", error);
       }
     } else {
       // Initialize with default categories based on board size
       generateDefaultCategories(boardSize);
     }
-  }, [initialSegment]);
+  }, [initialSegment, boardSize, generateDefaultCategories]);
 
   // Handle board size changes
   useEffect(() => {
     if (!initialSegment) {
       generateDefaultCategories(boardSize);
     }
-  }, [boardSize, initialSegment]);
-
-  const generateDefaultCategories = (size: number) => {
-    const defaultCategories: JeopardyCategory[] = [];
-    const categoryNames = ['Event Trivia', 'Fun Facts', 'General Knowledge', 'Pop Culture', 'Science & Tech', 'History', 'Geography', 'Sports', 'Music', 'Movies'];
-    
-    for (let i = 0; i < size; i++) {
-      const categoryName = categoryNames[i] || `Category ${i + 1}`;
-      const questions: JeopardyQuestion[] = [];
-      
-      for (let j = 0; j < size; j++) {
-        const points = j + 1;
-        questions.push({
-          id: `${i + 1}-${j + 1}`,
-          answer: `This is the answer for ${points} point${points > 1 ? 's' : ''}`,
-          question: `What is the question for ${points} point${points > 1 ? 's' : ''}?`,
-          points: points
-        });
-      }
-      
-      defaultCategories.push({
-        id: (i + 1).toString(),
-        name: categoryName,
-        questions: questions
-      });
-    }
-    
-    setCategories(defaultCategories);
-    // Save initial state to history
-    setHistory([defaultCategories]);
-    setHistoryIndex(0);
-  };
+  }, [boardSize, initialSegment, generateDefaultCategories]);
 
   const handleBoardSizeChange = (newSize: number) => {
     setBoardSize(newSize);
@@ -114,12 +128,12 @@ const Jeopardy: React.FC<JeopardyProps> = ({
     // Remove any future history if we're not at the end
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push([...newCategories]);
-    
+
     // Keep only last 10 states to prevent memory issues
     if (newHistory.length > 10) {
       newHistory.shift();
     }
-    
+
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
   };
@@ -129,7 +143,7 @@ const Jeopardy: React.FC<JeopardyProps> = ({
       const newIndex = historyIndex - 1;
       setHistoryIndex(newIndex);
       setCategories([...history[newIndex]]);
-      setAiMessage('Changes undone!');
+      setAiMessage("Changes undone!");
     }
   };
 
@@ -137,92 +151,107 @@ const Jeopardy: React.FC<JeopardyProps> = ({
 
   const saveCurrentState = () => {
     if (!saveName.trim()) return;
-    
+
     const newSavedState = {
       name: saveName.trim(),
       categories: [...categories],
-      timestamp: new Date()
+      timestamp: new Date(),
     };
-    
-    setSavedStates(prev => [...prev, newSavedState]);
-    setSaveName('');
+
+    setSavedStates((prev) => [...prev, newSavedState]);
+    setSaveName("");
     setShowSaveDialog(false);
     setAiMessage(`Saved as "${newSavedState.name}"!`);
   };
 
-  const loadSavedState = (savedState: { name: string; categories: JeopardyCategory[]; timestamp: Date }) => {
+  const loadSavedState = (savedState: {
+    name: string;
+    categories: JeopardyCategory[];
+    timestamp: Date;
+  }) => {
     // Save current state to history before loading
     saveToHistory(categories);
-    
+
     setCategories([...savedState.categories]);
     setBoardSize(savedState.categories.length);
     setAiMessage(`Loaded "${savedState.name}"!`);
   };
 
   const deleteSavedState = (index: number) => {
-    setSavedStates(prev => prev.filter((_, i) => i !== index));
+    setSavedStates((prev) => prev.filter((_, i) => i !== index));
   };
 
   const generateWithAI = async (prompt: string) => {
     setIsGenerating(true);
-    setAiMessage('Generating with AI...');
+    setAiMessage("Generating with AI...");
 
     // Save current state to history before making changes
     saveToHistory(categories);
 
     try {
-      const response = await fetch('/api/generate-jeopardy', {
-        method: 'POST',
+      const response = await fetch("/api/generate-jeopardy", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           prompt,
           categories,
           boardSize,
-          eventType: 'event', // You can make this dynamic based on the event
+          eventType: "event", // You can make this dynamic based on the event
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to generate with AI');
+        throw new Error(errorData.message || "Failed to generate with AI");
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
-        setAiMessage(data.message || 'AI response received');
-        
+        setAiMessage(data.message || "AI response received");
+
         // Handle different types of AI responses
         if (data.categories) {
           // Validate that we got the correct number of categories and questions
-          if (data.categories.length === boardSize && 
-              data.categories.every((cat: any) => cat.questions && cat.questions.length === boardSize)) {
+          if (
+            data.categories.length === boardSize &&
+            data.categories.every(
+              (cat: JeopardyCategory) =>
+                cat.questions && cat.questions.length === boardSize,
+            )
+          ) {
             setCategories(data.categories);
           } else {
-            setAiMessage(`AI generated incorrect board size. Expected ${boardSize}x${boardSize}, got ${data.categories.length}x${data.categories[0]?.questions?.length || 0}. Please try again.`);
+            setAiMessage(
+              `AI generated incorrect board size. Expected ${boardSize}x${boardSize}, got ${data.categories.length}x${data.categories[0]?.questions?.length || 0}. Please try again.`,
+            );
           }
         } else if (data.suggestions) {
           setAiMessage(data.suggestions);
         }
       } else {
-        setAiMessage(data.message || 'AI generation failed');
+        setAiMessage(data.message || "AI generation failed");
       }
     } catch (error) {
-      console.error('Error generating with AI:', error);
-      
+      console.error("Error generating with AI:", error);
+
       // Provide specific error messages
       if (error instanceof Error) {
-        if (error.message.includes('quota exceeded')) {
-          setAiMessage('OpenAI quota exceeded. Please check your billing or try again later.');
-        } else if (error.message.includes('API key')) {
-          setAiMessage('OpenAI API key issue. Please check your configuration.');
+        if (error.message.includes("quota exceeded")) {
+          setAiMessage(
+            "OpenAI quota exceeded. Please check your billing or try again later.",
+          );
+        } else if (error.message.includes("API key")) {
+          setAiMessage(
+            "OpenAI API key issue. Please check your configuration.",
+          );
         } else {
           setAiMessage(`Error: ${error.message}`);
         }
       } else {
-        setAiMessage('Error generating with AI. Please try again.');
+        setAiMessage("Error generating with AI. Please try again.");
       }
     } finally {
       setIsGenerating(false);
@@ -232,28 +261,33 @@ const Jeopardy: React.FC<JeopardyProps> = ({
   const handleSave = () => {
     if (categories.length === 0) return;
 
-    const totalQuestions = categories.reduce((total, category) => total + category.questions.length, 0);
+    const totalQuestions = categories.reduce(
+      (total, category) => total + category.questions.length,
+      0,
+    );
     const estimatedDuration = totalQuestions * 2; // 2 minutes per question
 
     const segment: EventSegment = {
       id: Date.now().toString(),
-      title: 'Jeopardy',
-      type: 'game',
+      title: "Jeopardy",
+      type: "game",
       description: `${categories.length} categories with ${totalQuestions} questions`,
       duration: estimatedDuration,
       content: JSON.stringify({
-        categories: categories
+        categories: categories,
       }),
       order: 0,
       isCustom: true,
     };
 
     // Show confirmation message
-    setAiMessage(`✅ Jeopardy game added to event program! (${categories.length} categories, ${totalQuestions} questions)`);
-    
+    setAiMessage(
+      `✅ Jeopardy game added to event program! (${categories.length} categories, ${totalQuestions} questions)`,
+    );
+
     // Add to event program
     onSave(segment);
-    
+
     // Close modal after a brief delay to show the message
     setTimeout(() => {
       handleClose();
@@ -263,41 +297,46 @@ const Jeopardy: React.FC<JeopardyProps> = ({
   const handleClose = () => {
     setCategories([]);
     setEditingQuestion(null);
-    setAiMessage('');
-    setUserInput('');
+    setAiMessage("");
+    setUserInput("");
     onClose();
   };
 
-  const updateQuestion = (categoryId: string, questionId: string, field: 'answer' | 'question', value: string) => {
-    const newCategories = categories.map(category => {
+  const updateQuestion = (
+    categoryId: string,
+    questionId: string,
+    field: "answer" | "question",
+    value: string,
+  ) => {
+    const newCategories = categories.map((category) => {
       if (category.id === categoryId) {
         return {
           ...category,
-          questions: category.questions.map(q => 
-            q.id === questionId ? { ...q, [field]: value } : q
-          )
+          questions: category.questions.map((q) =>
+            q.id === questionId ? { ...q, [field]: value } : q,
+          ),
         };
       }
       return category;
     });
-    
+
     setCategories(newCategories);
     saveToHistory(newCategories);
   };
 
   const updateCategoryName = (categoryId: string, newName: string) => {
-    const newCategories = categories.map(category => 
-      category.id === categoryId ? { ...category, name: newName } : category
+    const newCategories = categories.map((category) =>
+      category.id === categoryId ? { ...category, name: newName } : category,
     );
-    
+
     setCategories(newCategories);
     saveToHistory(newCategories);
   };
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={handleClose} 
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
       title="Create Jeopardy Game"
       maxWidth="max-w-6xl"
       minHeight="min-h-[80vh]"
@@ -337,11 +376,11 @@ const Jeopardy: React.FC<JeopardyProps> = ({
             placeholder="Ask AI to customize the game..."
             className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
             onKeyPress={(e) => {
-              if (e.key === 'Enter' && userInput.trim()) {
+              if (e.key === "Enter" && userInput.trim()) {
                 e.preventDefault();
                 e.stopPropagation();
                 generateWithAI(userInput);
-                setUserInput('');
+                setUserInput("");
               }
             }}
           />
@@ -349,7 +388,7 @@ const Jeopardy: React.FC<JeopardyProps> = ({
             onClick={() => {
               if (userInput.trim()) {
                 generateWithAI(userInput);
-                setUserInput('');
+                setUserInput("");
               }
             }}
             disabled={isGenerating || !userInput.trim()}
@@ -377,7 +416,8 @@ const Jeopardy: React.FC<JeopardyProps> = ({
             <p className="text-sm text-blue-700">{aiMessage}</p>
             {canUndo && (
               <p className="text-xs text-blue-500 mt-1">
-                💡 You can undo the last {historyIndex} change{historyIndex > 1 ? 's' : ''}
+                💡 You can undo the last {historyIndex} change
+                {historyIndex > 1 ? "s" : ""}
               </p>
             )}
           </div>
@@ -386,12 +426,19 @@ const Jeopardy: React.FC<JeopardyProps> = ({
         {/* Saved States */}
         {savedStates.length > 0 && (
           <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Saved States:</h4>
+            <h4 className="text-sm font-medium text-gray-700 mb-2">
+              Saved States:
+            </h4>
             <div className="space-y-2 max-h-32 overflow-y-auto">
               {savedStates.map((savedState, index) => (
-                <div key={index} className="flex items-center justify-between bg-white rounded p-2 border border-gray-100">
+                <div
+                  key={index}
+                  className="flex items-center justify-between bg-white rounded p-2 border border-gray-100"
+                >
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-800">{savedState.name}</p>
+                    <p className="text-sm font-medium text-gray-800">
+                      {savedState.name}
+                    </p>
                     <p className="text-xs text-gray-500">
                       {savedState.timestamp.toLocaleString()}
                     </p>
@@ -416,23 +463,25 @@ const Jeopardy: React.FC<JeopardyProps> = ({
               ))}
             </div>
           </div>
-                )}
+        )}
 
         {/* Jeopardy Board */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-800">Jeopardy Board</h3>
+            <h3 className="text-lg font-semibold text-gray-800">
+              Jeopardy Board
+            </h3>
             <div className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
               ✏️ Click to edit
             </div>
           </div>
-          
-          <div 
+
+          <div
             className="gap-3"
-            style={{ 
-              display: 'grid', 
+            style={{
+              display: "grid",
               gridTemplateColumns: `repeat(${boardSize}, 1fr)`,
-              gap: '0.75rem'
+              gap: "0.75rem",
             }}
           >
             {categories.map((category) => (
@@ -442,7 +491,9 @@ const Jeopardy: React.FC<JeopardyProps> = ({
                   <input
                     type="text"
                     value={category.name}
-                    onChange={(e) => updateCategoryName(category.id, e.target.value)}
+                    onChange={(e) =>
+                      updateCategoryName(category.id, e.target.value)
+                    }
                     className="bg-transparent text-white text-center font-semibold text-sm w-full border-none outline-none cursor-text uppercase tracking-wide"
                     placeholder="Category Name"
                   />
@@ -450,7 +501,7 @@ const Jeopardy: React.FC<JeopardyProps> = ({
                     ✏️
                   </div>
                 </div>
-                
+
                 {/* Questions */}
                 {category.questions.map((question) => (
                   <div
@@ -459,7 +510,9 @@ const Jeopardy: React.FC<JeopardyProps> = ({
                     onClick={() => setEditingQuestion(question)}
                     title={`Click to edit ${question.points} point question`}
                   >
-                    <span className="font-semibold text-blue-700 text-lg">{question.points}</span>
+                    <span className="font-semibold text-blue-700 text-lg">
+                      {question.points}
+                    </span>
                     <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs text-blue-500">
                       ✏️
                     </div>
@@ -476,7 +529,10 @@ const Jeopardy: React.FC<JeopardyProps> = ({
             <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">
-                  Edit Question - {editingQuestion?.points} point{editingQuestion?.points && editingQuestion.points > 1 ? 's' : ''}
+                  Edit Question - {editingQuestion?.points} point
+                  {editingQuestion?.points && editingQuestion.points > 1
+                    ? "s"
+                    : ""}
                 </h3>
                 <button
                   onClick={() => setEditingQuestion(null)}
@@ -485,20 +541,24 @@ const Jeopardy: React.FC<JeopardyProps> = ({
                   ×
                 </button>
               </div>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Answer (What the host reads to players)
                   </label>
                   <textarea
-                    value={editingQuestion?.answer || ''}
-                    onChange={(e) => updateQuestion(
-                      categories.find(c => c.questions.some(q => q.id === editingQuestion?.id))?.id || '',
-                      editingQuestion?.id || '',
-                      'answer',
-                      e.target.value
-                    )}
+                    value={editingQuestion?.answer || ""}
+                    onChange={(e) =>
+                      updateQuestion(
+                        categories.find((c) =>
+                          c.questions.some((q) => q.id === editingQuestion?.id),
+                        )?.id || "",
+                        editingQuestion?.id || "",
+                        "answer",
+                        e.target.value,
+                      )
+                    }
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     placeholder="This planet is known as the Red Planet"
@@ -507,29 +567,34 @@ const Jeopardy: React.FC<JeopardyProps> = ({
                     This is the clue that the host will read to the players
                   </p>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Question (What players respond with)
                   </label>
                   <textarea
-                    value={editingQuestion?.question || ''}
-                    onChange={(e) => updateQuestion(
-                      categories.find(c => c.questions.some(q => q.id === editingQuestion?.id))?.id || '',
-                      editingQuestion?.id || '',
-                      'question',
-                      e.target.value
-                    )}
+                    value={editingQuestion?.question || ""}
+                    onChange={(e) =>
+                      updateQuestion(
+                        categories.find((c) =>
+                          c.questions.some((q) => q.id === editingQuestion?.id),
+                        )?.id || "",
+                        editingQuestion?.id || "",
+                        "question",
+                        e.target.value,
+                      )
+                    }
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     placeholder="What is Mars?"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Players should respond with this answer (usually starts with "What is...", "Who is...", etc.)
+                    Players should respond with this answer (usually starts with
+                    &quot;What is...&quot;, &quot;Who is...&quot;, etc.)
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex justify-end space-x-3 mt-6">
                 <button
                   onClick={() => setEditingQuestion(null)}
@@ -549,7 +614,7 @@ const Jeopardy: React.FC<JeopardyProps> = ({
               <h3 className="text-lg font-semibold text-gray-800 mb-4">
                 Save Current State
               </h3>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -562,24 +627,25 @@ const Jeopardy: React.FC<JeopardyProps> = ({
                     placeholder="e.g., 'My Best Version', 'AI Generated', etc."
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     onKeyPress={(e) => {
-                      if (e.key === 'Enter' && saveName.trim()) {
+                      if (e.key === "Enter" && saveName.trim()) {
                         saveCurrentState();
                       }
                     }}
                     autoFocus
                   />
                 </div>
-                
+
                 <p className="text-sm text-gray-600">
-                  Save your current Jeopardy board as a checkpoint. You can load it later if needed.
+                  Save your current Jeopardy board as a checkpoint. You can load
+                  it later if needed.
                 </p>
               </div>
-              
+
               <div className="flex justify-end space-x-3 mt-6">
                 <button
                   onClick={() => {
                     setShowSaveDialog(false);
-                    setSaveName('');
+                    setSaveName("");
                   }}
                   className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
                 >
@@ -602,7 +668,9 @@ const Jeopardy: React.FC<JeopardyProps> = ({
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-40">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="text-sm text-gray-600">
-            {categories.length > 0 ? `${categories.length} categories with ${categories.reduce((total, cat) => total + cat.questions.length, 0)} questions` : 'No categories created yet'}
+            {categories.length > 0
+              ? `${categories.length} categories with ${categories.reduce((total, cat) => total + cat.questions.length, 0)} questions`
+              : "No categories created yet"}
           </div>
           <button
             onClick={handleSave}
@@ -617,4 +685,4 @@ const Jeopardy: React.FC<JeopardyProps> = ({
   );
 };
 
-export default Jeopardy; 
+export default Jeopardy;

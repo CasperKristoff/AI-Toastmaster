@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 
 interface SlideShowPresentationProps {
   photoUrls: string[];
 }
 
 const SlideShowPresentation: React.FC<SlideShowPresentationProps> = ({
-  photoUrls
+  photoUrls,
 }) => {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -17,7 +18,7 @@ const SlideShowPresentation: React.FC<SlideShowPresentationProps> = ({
     if (photoUrls.length <= 1) return;
 
     intervalRef.current = setInterval(() => {
-      setCurrentPhotoIndex(prev => {
+      setCurrentPhotoIndex((prev) => {
         if (prev >= photoUrls.length - 1) {
           return 0; // Loop back to first photo
         }
@@ -37,10 +38,10 @@ const SlideShowPresentation: React.FC<SlideShowPresentationProps> = ({
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
-    
+
     setIsTransitioning(true);
     setTimeout(() => {
-      setCurrentPhotoIndex(prev => {
+      setCurrentPhotoIndex((prev) => {
         if (prev >= photoUrls.length - 1) {
           return 0; // Loop back to first photo
         }
@@ -51,7 +52,7 @@ const SlideShowPresentation: React.FC<SlideShowPresentationProps> = ({
 
     // Restart auto-advance
     intervalRef.current = setInterval(() => {
-      setCurrentPhotoIndex(prev => {
+      setCurrentPhotoIndex((prev) => {
         if (prev >= photoUrls.length - 1) {
           return 0;
         }
@@ -64,10 +65,10 @@ const SlideShowPresentation: React.FC<SlideShowPresentationProps> = ({
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
-    
+
     setIsTransitioning(true);
     setTimeout(() => {
-      setCurrentPhotoIndex(prev => {
+      setCurrentPhotoIndex((prev) => {
         if (prev <= 0) {
           return photoUrls.length - 1; // Loop to last photo
         }
@@ -78,7 +79,7 @@ const SlideShowPresentation: React.FC<SlideShowPresentationProps> = ({
 
     // Restart auto-advance
     intervalRef.current = setInterval(() => {
-      setCurrentPhotoIndex(prev => {
+      setCurrentPhotoIndex((prev) => {
         if (prev >= photoUrls.length - 1) {
           return 0;
         }
@@ -90,80 +91,103 @@ const SlideShowPresentation: React.FC<SlideShowPresentationProps> = ({
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') {
+      if (e.key === "ArrowLeft") {
         goToPrevious();
-      } else if (e.key === 'ArrowRight' || e.key === ' ') {
+      } else if (e.key === "ArrowRight" || e.key === " ") {
         e.preventDefault();
         goToNext();
       }
     };
 
-    document.addEventListener('keydown', handleKeyPress);
-    return () => document.removeEventListener('keydown', handleKeyPress);
+    document.addEventListener("keydown", handleKeyPress);
+    return () => document.removeEventListener("keydown", handleKeyPress);
   }, [goToNext, goToPrevious]);
 
   if (photoUrls.length === 0) {
     return (
       <div className="text-center py-12">
         <div className="text-6xl mb-4">📸</div>
-        <h2 className="text-2xl font-bold text-dark-royalty mb-2">No Photos Available</h2>
+        <h2 className="text-2xl font-bold text-dark-royalty mb-2">
+          No Photos Available
+        </h2>
         <p className="text-deep-sea/70">Please add photos to the slideshow</p>
       </div>
     );
   }
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black flex items-center justify-center"
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => setShowControls(false)}
     >
       {/* Full-screen Photo Display */}
       <div className="relative w-full h-full flex items-center justify-center">
-        <img
+        <Image
           src={photoUrls[currentPhotoIndex]}
           alt={`Slide ${currentPhotoIndex + 1}`}
+          width={1920}
+          height={1080}
           className={`max-w-full max-h-full object-contain transition-opacity duration-300 ${
-            isTransitioning ? 'opacity-50' : 'opacity-100'
+            isTransitioning ? "opacity-50" : "opacity-100"
           }`}
-          loading="lazy"
         />
-        
+
         {/* Navigation Overlay - Always visible but subtle */}
-        <div className={`absolute inset-0 flex items-center justify-between p-8 transition-opacity duration-300 ${
-          showControls ? 'opacity-100' : 'opacity-0'
-        }`}>
+        <div
+          className={`absolute inset-0 flex items-center justify-between p-8 transition-opacity duration-300 ${
+            showControls ? "opacity-100" : "opacity-0"
+          }`}
+        >
           <button
             onClick={goToPrevious}
             className="bg-black/50 text-white rounded-full p-4 hover:bg-black/70 transition-all duration-300 backdrop-blur-sm"
           >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M15 18l-6-6 6-6"/>
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M15 18l-6-6 6-6" />
             </svg>
           </button>
           <button
             onClick={goToNext}
             className="bg-black/50 text-white rounded-full p-4 hover:bg-black/70 transition-all duration-300 backdrop-blur-sm"
           >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 18l6-6-6-6"/>
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M9 18l6-6-6-6" />
             </svg>
           </button>
         </div>
 
         {/* Photo Counter - Top right */}
-        <div className={`absolute top-8 right-8 bg-black/50 text-white px-4 py-2 rounded-xl backdrop-blur-sm transition-opacity duration-300 ${
-          showControls ? 'opacity-100' : 'opacity-0'
-        }`}>
+        <div
+          className={`absolute top-8 right-8 bg-black/50 text-white px-4 py-2 rounded-xl backdrop-blur-sm transition-opacity duration-300 ${
+            showControls ? "opacity-100" : "opacity-0"
+          }`}
+        >
           <p className="text-lg font-semibold">
             {currentPhotoIndex + 1} / {photoUrls.length}
           </p>
         </div>
 
         {/* Auto-advance indicator - Bottom center */}
-        <div className={`absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-xl backdrop-blur-sm transition-opacity duration-300 ${
-          showControls ? 'opacity-100' : 'opacity-0'
-        }`}>
+        <div
+          className={`absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-xl backdrop-blur-sm transition-opacity duration-300 ${
+            showControls ? "opacity-100" : "opacity-0"
+          }`}
+        >
           <p className="text-sm">
             Auto-advancing every 3 seconds • Use arrow keys to navigate
           </p>
@@ -171,9 +195,11 @@ const SlideShowPresentation: React.FC<SlideShowPresentationProps> = ({
 
         {/* Photo Thumbnails - Bottom */}
         {photoUrls.length > 1 && (
-          <div className={`absolute bottom-20 left-1/2 transform -translate-x-1/2 transition-opacity duration-300 ${
-            showControls ? 'opacity-100' : 'opacity-0'
-          }`}>
+          <div
+            className={`absolute bottom-20 left-1/2 transform -translate-x-1/2 transition-opacity duration-300 ${
+              showControls ? "opacity-100" : "opacity-0"
+            }`}
+          >
             <div className="flex space-x-2 bg-black/50 backdrop-blur-sm p-2 rounded-xl">
               {photoUrls.map((url, index) => (
                 <button
@@ -183,10 +209,10 @@ const SlideShowPresentation: React.FC<SlideShowPresentationProps> = ({
                       clearInterval(intervalRef.current);
                     }
                     setCurrentPhotoIndex(index);
-                    
+
                     // Restart auto-advance
                     intervalRef.current = setInterval(() => {
-                      setCurrentPhotoIndex(prev => {
+                      setCurrentPhotoIndex((prev) => {
                         if (prev >= photoUrls.length - 1) {
                           return 0;
                         }
@@ -196,15 +222,16 @@ const SlideShowPresentation: React.FC<SlideShowPresentationProps> = ({
                   }}
                   className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all duration-300 ${
                     index === currentPhotoIndex
-                      ? 'border-white'
-                      : 'border-transparent hover:border-white/50'
+                      ? "border-white"
+                      : "border-transparent hover:border-white/50"
                   }`}
                 >
-                  <img
+                  <Image
                     src={url}
                     alt={`Thumbnail ${index + 1}`}
+                    width={48}
+                    height={48}
                     className="w-full h-full object-cover"
-                    loading="lazy"
                   />
                 </button>
               ))}
@@ -216,4 +243,4 @@ const SlideShowPresentation: React.FC<SlideShowPresentationProps> = ({
   );
 };
 
-export default SlideShowPresentation; 
+export default SlideShowPresentation;

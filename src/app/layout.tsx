@@ -32,9 +32,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-full flex flex-col bg-gradient-to-b from-anti-flash-white to-lace-cap`}
       >
         <div className="flex flex-col min-h-screen">
-          <main className="flex-grow relative isolate">
-            {children}
-          </main>
+          <main className="flex-grow relative isolate">{children}</main>
         </div>
       </body>
     </html>

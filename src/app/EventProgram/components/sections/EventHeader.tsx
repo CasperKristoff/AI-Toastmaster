@@ -16,17 +16,20 @@ export default function EventHeader({ user }: EventHeaderProps) {
   // Handle click outside dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setShowDropdown(false);
       }
     };
 
     if (showDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showDropdown]);
 
@@ -35,7 +38,7 @@ export default function EventHeader({ user }: EventHeaderProps) {
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <div className="flex items-center">
           <button
-            onClick={() => router.push('/ProfilePage')}
+            onClick={() => router.push("/ProfilePage")}
             className="text-2xl font-bold text-dark-royalty hover:text-deep-sea transition-colors duration-300 cursor-pointer"
           >
             AI Toastmaster
@@ -47,7 +50,7 @@ export default function EventHeader({ user }: EventHeaderProps) {
             className="w-10 h-10 bg-gradient-to-br from-dark-royalty to-deep-sea rounded-full flex items-center justify-center text-white font-semibold hover:scale-110 transition-all duration-300 shadow-lg"
             title="Profile"
           >
-                          {user?.email?.charAt(0).toUpperCase() || 'U'}
+            {user?.email?.charAt(0).toUpperCase() || "U"}
           </button>
           {showDropdown && (
             <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-lg border border-dark-royalty/10 z-50">
@@ -68,4 +71,4 @@ export default function EventHeader({ user }: EventHeaderProps) {
       </div>
     </nav>
   );
-} 
+}

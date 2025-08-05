@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 
 interface ModalProps {
   isOpen: boolean;
@@ -19,8 +19,8 @@ const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   children,
-  maxWidth = 'max-w-lg',
-  minHeight = 'min-h-[360px]',
+  maxWidth = "max-w-lg",
+  minHeight = "min-h-[360px]",
   onSave,
   saveDisabled = false,
   showSaveHint = false,
@@ -33,18 +33,18 @@ const Modal: React.FC<ModalProps> = ({
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (!isOpen) return;
-      
-      if (e.key === 'Enter' && onSave && !saveDisabled && !disableEnterSave) {
+
+      if (e.key === "Enter" && onSave && !saveDisabled && !disableEnterSave) {
         e.preventDefault();
         onSave();
-      } else if (e.key === 'Escape') {
+      } else if (e.key === "Escape") {
         e.preventDefault();
         onClose();
       }
     };
 
-    document.addEventListener('keydown', handleKeyPress);
-    return () => document.removeEventListener('keydown', handleKeyPress);
+    document.addEventListener("keydown", handleKeyPress);
+    return () => document.removeEventListener("keydown", handleKeyPress);
   }, [isOpen, onSave, saveDisabled, disableEnterSave, onClose]);
 
   // Auto-focus first input field when modal opens
@@ -52,12 +52,14 @@ const Modal: React.FC<ModalProps> = ({
     if (isOpen && autoFocus && modalRef.current) {
       // Small delay to ensure modal is fully rendered
       const timer = setTimeout(() => {
-        const firstInput = modalRef.current?.querySelector('input, textarea, select') as HTMLElement;
+        const firstInput = modalRef.current?.querySelector(
+          "input, textarea, select",
+        ) as HTMLElement;
         if (firstInput) {
           firstInput.focus();
         }
       }, 100);
-      
+
       return () => clearTimeout(timer);
     }
   }, [isOpen, autoFocus]);
@@ -71,7 +73,9 @@ const Modal: React.FC<ModalProps> = ({
         className={`bg-white/95 backdrop-blur-xl rounded-3xl p-5 w-full ${maxWidth} max-h-[90vh] ${minHeight} overflow-y-auto border border-dark-royalty/20 shadow-2xl`}
       >
         <div className="flex justify-between items-center mb-6">
-          {title && <h2 className="text-2xl font-bold text-dark-royalty">{title}</h2>}
+          {title && (
+            <h2 className="text-2xl font-bold text-dark-royalty">{title}</h2>
+          )}
           <button
             onClick={onClose}
             className="text-deep-sea/60 hover:text-dark-royalty transition-colors text-2xl"
@@ -80,7 +84,7 @@ const Modal: React.FC<ModalProps> = ({
           </button>
         </div>
         {children}
-        
+
         {/* Save hint */}
         {showSaveHint && onSave && (
           <div className="mt-4 pt-4 border-t border-dark-royalty/10">
@@ -94,4 +98,4 @@ const Modal: React.FC<ModalProps> = ({
   );
 };
 
-export default Modal; 
+export default Modal;

@@ -1,17 +1,38 @@
 // Event Types for AI Toastmaster
 
-export type EventType = 'bachelor' | 'theme' | 'house' | 'roast' | 'prom' | 'trivia' | 'glowup' | 'breakup';
+export type EventType =
+  | "bachelor"
+  | "theme"
+  | "house"
+  | "roast"
+  | "prom"
+  | "trivia"
+  | "glowup"
+  | "breakup";
 
-export type EventTone = 'formal' | 'casual' | 'party' | 'professional' | 'wholesome' | 'roast';
+export type EventTone =
+  | "formal"
+  | "casual"
+  | "party"
+  | "professional"
+  | "wholesome"
+  | "roast";
 
-export type SegmentType = 'welcome' | 'introduction' | 'activity' | 'toast' | 'game' | 'break' | 'closing';
+export type SegmentType =
+  | "welcome"
+  | "introduction"
+  | "activity"
+  | "toast"
+  | "game"
+  | "break"
+  | "closing";
 
 export interface Guest {
   id: string;
   name: string;
   age?: number;
   relationship: string;
-  ageGroup?: 'child' | 'teen' | 'adult' | 'senior';
+  ageGroup?: "child" | "teen" | "adult" | "senior";
   funFact?: string;
   isVIP?: boolean;
 }

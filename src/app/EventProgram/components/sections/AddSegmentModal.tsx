@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
-import { SegmentType, EventSegment } from '../../../../types/event';
-import Modal from '../../../../components/Modal';
+import React, { useEffect } from "react";
+import { SegmentType, EventSegment } from "../../../../types/event";
+import Modal from "../../../../components/Modal";
 
 interface AddSegmentModalProps {
   isOpen: boolean;
@@ -33,10 +33,14 @@ const AddSegmentModal: React.FC<AddSegmentModalProps> = ({
   onAddSegment,
   isEditing = false,
   segmentToEdit = null,
-  onSaveEdit
+  onSaveEdit,
 }) => {
   // Check if the form is valid
-  const isFormValid = newSegment.title && newSegment.duration && !isNaN(Number(newSegment.duration)) && Number(newSegment.duration) > 0;
+  const isFormValid =
+    newSegment.title &&
+    newSegment.duration &&
+    !isNaN(Number(newSegment.duration)) &&
+    Number(newSegment.duration) > 0;
 
   // Load segment data when editing
   useEffect(() => {
@@ -46,7 +50,7 @@ const AddSegmentModal: React.FC<AddSegmentModalProps> = ({
         description: segmentToEdit.description || "",
         duration: segmentToEdit.duration.toString(),
         type: segmentToEdit.type,
-        personalFunFacts: segmentToEdit.personalFunFacts || {}
+        personalFunFacts: segmentToEdit.personalFunFacts || {},
       });
     }
   }, [isEditing, segmentToEdit, setNewSegment]);
@@ -62,9 +66,9 @@ const AddSegmentModal: React.FC<AddSegmentModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={onClose} 
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
       title={isEditing ? "Edit Program Segment" : "Add Program Segment"}
       onSave={handleSave}
       saveDisabled={!isFormValid}
@@ -79,7 +83,9 @@ const AddSegmentModal: React.FC<AddSegmentModalProps> = ({
           <input
             type="text"
             value={newSegment.title}
-            onChange={(e) => setNewSegment({ ...newSegment, title: e.target.value })}
+            onChange={(e) =>
+              setNewSegment({ ...newSegment, title: e.target.value })
+            }
             className="w-full px-4 py-3 rounded-xl border border-dark-royalty/20 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 focus:border-transparent transition-all duration-300"
             placeholder="e.g., Welcome Speech, Ice Breaker Game"
           />
@@ -91,7 +97,9 @@ const AddSegmentModal: React.FC<AddSegmentModalProps> = ({
           </label>
           <textarea
             value={newSegment.description}
-            onChange={(e) => setNewSegment({ ...newSegment, description: e.target.value })}
+            onChange={(e) =>
+              setNewSegment({ ...newSegment, description: e.target.value })
+            }
             rows={3}
             className="w-full px-4 py-3 rounded-xl border border-dark-royalty/20 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 focus:border-transparent transition-all duration-300 resize-none"
             placeholder="Describe what will happen during this segment... (optional)"
@@ -108,7 +116,10 @@ const AddSegmentModal: React.FC<AddSegmentModalProps> = ({
               value={newSegment.duration}
               onChange={(e) => {
                 const value = e.target.value;
-                if (value === "" || (!isNaN(Number(value)) && Number(value) > 0)) {
+                if (
+                  value === "" ||
+                  (!isNaN(Number(value)) && Number(value) > 0)
+                ) {
                   setNewSegment({ ...newSegment, duration: value });
                 }
               }}
@@ -123,7 +134,12 @@ const AddSegmentModal: React.FC<AddSegmentModalProps> = ({
             </label>
             <select
               value={newSegment.type}
-              onChange={(e) => setNewSegment({ ...newSegment, type: e.target.value as SegmentType })}
+              onChange={(e) =>
+                setNewSegment({
+                  ...newSegment,
+                  type: e.target.value as SegmentType,
+                })
+              }
               className="w-full px-4 py-3 rounded-xl border border-dark-royalty/20 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 focus:border-transparent transition-all duration-300"
             >
               <option value="welcome">Welcome</option>
@@ -137,7 +153,7 @@ const AddSegmentModal: React.FC<AddSegmentModalProps> = ({
           </div>
         </div>
       </div>
-      
+
       <div className="flex space-x-4 mt-8 pt-4 border-t border-dark-royalty/10">
         <button
           onClick={onClose}
@@ -150,11 +166,11 @@ const AddSegmentModal: React.FC<AddSegmentModalProps> = ({
           disabled={!isFormValid}
           className="flex-1 px-6 py-3 bg-dark-royalty text-white rounded-xl hover:bg-dark-royalty/90 transition-all duration-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isEditing ? 'Save Changes' : 'Add Segment'}
+          {isEditing ? "Save Changes" : "Add Segment"}
         </button>
       </div>
     </Modal>
   );
 };
 
-export default AddSegmentModal; 
+export default AddSegmentModal;

@@ -10,7 +10,14 @@ import SlideShowPresentation from "../EventProgram/components/SlideShowPresentat
 import JeopardyPresentation from "../EventProgram/components/JeopardyPresentation";
 
 interface SlideData {
-  type: 'title' | 'segment' | 'closing' | 'funfact' | 'spinthewheel' | 'slideshow' | 'jeopardy';
+  type:
+    | "title"
+    | "segment"
+    | "closing"
+    | "funfact"
+    | "spinthewheel"
+    | "slideshow"
+    | "jeopardy";
   title: string;
   subtitle?: string;
   description?: string;
@@ -28,15 +35,28 @@ interface SlideData {
   // Slide show specific fields
   photoUrls?: string[];
   // Jeopardy specific fields
-  jeopardyCategories?: any[];
+  jeopardyCategories?: JeopardyCategory[];
 }
 
 interface TileState {
-  [key: string]: 'hidden' | 'question' | 'answer' | 'completed';
+  [key: string]: "hidden" | "question" | "answer" | "completed";
 }
 
 interface TileOriginalState {
   [key: string]: boolean; // true if originally completed
+}
+
+interface JeopardyCategory {
+  id: string;
+  name: string;
+  questions: JeopardyQuestion[];
+}
+
+interface JeopardyQuestion {
+  id: string;
+  answer: string;
+  question: string;
+  points: number;
 }
 
 function PresentationPageContent() {
@@ -50,69 +70,78 @@ function PresentationPageContent() {
   const [showFunFactAnswer, setShowFunFactAnswer] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showFullScreenPrompt, setShowFullScreenPrompt] = useState(false);
-  
+
   // Jeopardy state persistence
   const [jeopardyTileStates, setJeopardyTileStates] = useState<TileState>({});
-  const [jeopardyOriginalCompletedStates, setJeopardyOriginalCompletedStates] = useState<TileOriginalState>({});
+  const [jeopardyOriginalCompletedStates, setJeopardyOriginalCompletedStates] =
+    useState<TileOriginalState>({});
   const [jeopardyInitialized, setJeopardyInitialized] = useState(false);
 
   // Get event ID from URL parameters
-  const eventId = searchParams.get('eventId');
-  const startIndex = parseInt(searchParams.get('startIndex') || '0');
+  const eventId = searchParams.get("eventId");
+  const startIndex = parseInt(searchParams.get("startIndex") || "0");
 
   // Initialize Jeopardy state from localStorage or create new
-  const initializeJeopardyState = useCallback((categories: any[]) => {
-    if (!eventId) return;
-    
-    const storageKey = `jeopardy-state-${eventId}`;
-    const savedState = localStorage.getItem(storageKey);
-    
-    if (savedState) {
-      try {
-        const parsedState = JSON.parse(savedState);
-        setJeopardyTileStates(parsedState.tileStates || {});
-        setJeopardyOriginalCompletedStates(parsedState.originalCompletedStates || {});
-      } catch (error) {
-        console.error('Error parsing saved Jeopardy state:', error);
-        // Fallback to fresh state
+  const initializeJeopardyState = useCallback(
+    (categories: JeopardyCategory[]) => {
+      if (!eventId) return;
+
+      const storageKey = `jeopardy-state-${eventId}`;
+      const savedState = localStorage.getItem(storageKey);
+
+      if (savedState) {
+        try {
+          const parsedState = JSON.parse(savedState);
+          setJeopardyTileStates(parsedState.tileStates || {});
+          setJeopardyOriginalCompletedStates(
+            parsedState.originalCompletedStates || {},
+          );
+        } catch (error) {
+          console.error("Error parsing saved Jeopardy state:", error);
+          // Fallback to fresh state
+          const initialStates: TileState = {};
+          const initialCompletedStates: TileOriginalState = {};
+          categories.forEach((category) => {
+            category.questions.forEach((question: JeopardyQuestion) => {
+              initialStates[question.id] = "hidden";
+              initialCompletedStates[question.id] = false;
+            });
+          });
+          setJeopardyTileStates(initialStates);
+          setJeopardyOriginalCompletedStates(initialCompletedStates);
+        }
+      } else {
+        // Create fresh state
         const initialStates: TileState = {};
         const initialCompletedStates: TileOriginalState = {};
-        categories.forEach(category => {
-          category.questions.forEach((question: any) => {
-            initialStates[question.id] = 'hidden';
+        categories.forEach((category) => {
+          category.questions.forEach((question: JeopardyQuestion) => {
+            initialStates[question.id] = "hidden";
             initialCompletedStates[question.id] = false;
           });
         });
         setJeopardyTileStates(initialStates);
         setJeopardyOriginalCompletedStates(initialCompletedStates);
       }
-    } else {
-      // Create fresh state
-      const initialStates: TileState = {};
-      const initialCompletedStates: TileOriginalState = {};
-      categories.forEach(category => {
-        category.questions.forEach((question: any) => {
-          initialStates[question.id] = 'hidden';
-          initialCompletedStates[question.id] = false;
-        });
-      });
-      setJeopardyTileStates(initialStates);
-      setJeopardyOriginalCompletedStates(initialCompletedStates);
-    }
-  }, [eventId]);
+    },
+    [eventId],
+  );
 
   // Save Jeopardy state to localStorage
-  const saveJeopardyState = useCallback((tileStates: TileState, originalCompletedStates: TileOriginalState) => {
-    if (!eventId) return;
-    
-    const storageKey = `jeopardy-state-${eventId}`;
-    const stateToSave = {
-      tileStates,
-      originalCompletedStates,
-      timestamp: Date.now()
-    };
-    localStorage.setItem(storageKey, JSON.stringify(stateToSave));
-  }, [eventId]);
+  const saveJeopardyState = useCallback(
+    (tileStates: TileState, originalCompletedStates: TileOriginalState) => {
+      if (!eventId) return;
+
+      const storageKey = `jeopardy-state-${eventId}`;
+      const stateToSave = {
+        tileStates,
+        originalCompletedStates,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+    },
+    [eventId],
+  );
 
   // Full-screen management
   const enterFullScreen = useCallback(async () => {
@@ -120,7 +149,7 @@ function PresentationPageContent() {
       if (document.documentElement.requestFullscreen) {
         await document.documentElement.requestFullscreen();
       } else {
-        const element = document.documentElement as HTMLElement & { 
+        const element = document.documentElement as HTMLElement & {
           webkitRequestFullscreen?: () => Promise<void>;
           mozRequestFullScreen?: () => Promise<void>;
           msRequestFullscreen?: () => Promise<void>;
@@ -136,7 +165,7 @@ function PresentationPageContent() {
       setIsFullScreen(true);
       setShowFullScreenPrompt(false);
     } catch (error) {
-      console.error('Error entering full screen:', error);
+      console.error("Error entering full screen:", error);
       // Fallback: just hide the prompt
       setShowFullScreenPrompt(false);
     }
@@ -162,7 +191,7 @@ function PresentationPageContent() {
       }
       setIsFullScreen(false);
     } catch (error) {
-      console.error('Error exiting full screen:', error);
+      console.error("Error exiting full screen:", error);
     }
   }, []);
 
@@ -188,16 +217,25 @@ function PresentationPageContent() {
       checkFullScreenState();
     };
 
-    document.addEventListener('fullscreenchange', handleFullScreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullScreenChange);
-    document.addEventListener('mozfullscreenchange', handleFullScreenChange);
-    document.addEventListener('MSFullscreenChange', handleFullScreenChange);
+    document.addEventListener("fullscreenchange", handleFullScreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullScreenChange);
+    document.addEventListener("mozfullscreenchange", handleFullScreenChange);
+    document.addEventListener("MSFullscreenChange", handleFullScreenChange);
 
     return () => {
-      document.removeEventListener('fullscreenchange', handleFullScreenChange);
-      document.removeEventListener('webkitfullscreenchange', handleFullScreenChange);
-      document.removeEventListener('mozfullscreenchange', handleFullScreenChange);
-      document.removeEventListener('MSFullscreenChange', handleFullScreenChange);
+      document.removeEventListener("fullscreenchange", handleFullScreenChange);
+      document.removeEventListener(
+        "webkitfullscreenchange",
+        handleFullScreenChange,
+      );
+      document.removeEventListener(
+        "mozfullscreenchange",
+        handleFullScreenChange,
+      );
+      document.removeEventListener(
+        "MSFullscreenChange",
+        handleFullScreenChange,
+      );
     };
   }, [checkFullScreenState]);
 
@@ -214,7 +252,7 @@ function PresentationPageContent() {
   // Load event data
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/');
+      router.push("/");
       return;
     }
 
@@ -224,16 +262,16 @@ function PresentationPageContent() {
       try {
         // Get event data from Firestore
         const eventData = await eventService.getEvent(eventId);
-        
+
         if (eventData) {
           setEvent(eventData);
           setCurrentSlideIndex(startIndex);
         } else {
-          router.push('/newEvent');
+          router.push("/newEvent");
         }
       } catch (error) {
-        console.error('Error fetching event:', error);
-        router.push('/newEvent');
+        console.error("Error fetching event:", error);
+        router.push("/newEvent");
       }
     };
 
@@ -245,9 +283,9 @@ function PresentationPageContent() {
     if (event && !jeopardyInitialized) {
       // Find Jeopardy segments and initialize state
       const jeopardySegments = event.timeline.filter(
-        segment => segment.type === 'game' && segment.title === 'Jeopardy'
+        (segment) => segment.type === "game" && segment.title === "Jeopardy",
       );
-      
+
       if (jeopardySegments.length > 0) {
         try {
           const jeopardyData = JSON.parse(jeopardySegments[0].content);
@@ -257,7 +295,10 @@ function PresentationPageContent() {
             setJeopardyInitialized(true);
           }
         } catch (error) {
-          console.error('Error parsing Jeopardy data for initialization:', error);
+          console.error(
+            "Error parsing Jeopardy data for initialization:",
+            error,
+          );
         }
       }
     }
@@ -265,10 +306,10 @@ function PresentationPageContent() {
 
   // Helper functions
   const formatTime = (time: string) => {
-    return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
+    return new Date(`2000-01-01T${time}`).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
     });
   };
 
@@ -281,7 +322,7 @@ function PresentationPageContent() {
       prom: "Prom or Formal",
       trivia: "Trivia Night",
       glowup: "Glow-Up Party",
-      breakup: "Breakup Bash"
+      breakup: "Breakup Bash",
     };
     return labels[type as keyof typeof labels] || "Event";
   };
@@ -293,21 +334,22 @@ function PresentationPageContent() {
       party: "High Energy Party",
       professional: "Professional",
       wholesome: "Family-Friendly",
-      roast: "Playful & Humorous"
+      roast: "Playful & Humorous",
     };
     return labels[tone as keyof typeof labels] || tone;
   };
 
   const getSlideBackground = () => {
-    if (!event) return "bg-gradient-to-br from-deep-sea/10 via-white to-kimchi/10";
-    
+    if (!event)
+      return "bg-gradient-to-br from-deep-sea/10 via-white to-kimchi/10";
+
     const toneGradients = {
       formal: "from-blue-50 via-white to-indigo-50",
       casual: "from-green-50 via-white to-emerald-50",
       party: "from-purple-50 via-white to-pink-50",
       professional: "from-gray-50 via-white to-slate-50",
       wholesome: "from-pink-50 via-white to-rose-50",
-      roast: "from-orange-50 via-white to-red-50"
+      roast: "from-orange-50 via-white to-red-50",
     };
     return `bg-gradient-to-br ${toneGradients[event.tone as keyof typeof toneGradients] || "from-deep-sea/10 via-white to-kimchi/10"}`;
   };
@@ -315,122 +357,128 @@ function PresentationPageContent() {
   // Generate slides from event data
   const generateSlides = (): SlideData[] => {
     if (!event) return [];
-    
+
     const slides: SlideData[] = [];
 
     // Title slide
     slides.push({
-      type: 'title',
+      type: "title",
       title: event.name,
       subtitle: `Kickoff: ${formatTime(event.startTime)}`,
-      description: `${getEventTypeLabel(event.type)} • ${getToneLabel(event.tone)}`
+      description: `${getEventTypeLabel(event.type)} • ${getToneLabel(event.tone)}`,
     });
 
     // Segment slides
     event.timeline.forEach((segment) => {
       // Special handling for Spin The Wheel segments
-      if (segment.type === 'game' && segment.title === 'Spin The Wheel') {
+      if (segment.type === "game" && segment.title === "Spin The Wheel") {
         slides.push({
-          type: 'spinthewheel',
-          title: 'Spin The Wheel',
+          type: "spinthewheel",
+          title: "Spin The Wheel",
           subtitle: `${segment.duration} minutes`,
           description: segment.description,
           duration: segment.duration,
           challenge: segment.description,
           guests: event.guests,
-          speakerNotes: `Challenge: ${segment.description}. Spin the wheel to randomly select a guest who must complete the challenge.`
+          speakerNotes: `Challenge: ${segment.description}. Spin the wheel to randomly select a guest who must complete the challenge.`,
         });
-      } 
+      }
       // Special handling for Jeopardy segments
-      else if (segment.type === 'game' && segment.title === 'Jeopardy') {
+      else if (segment.type === "game" && segment.title === "Jeopardy") {
         try {
           const jeopardyData = JSON.parse(segment.content);
           const categories = jeopardyData.categories || [];
-          
+
           slides.push({
-            type: 'jeopardy',
-            title: 'Jeopardy',
+            type: "jeopardy",
+            title: "Jeopardy",
             subtitle: `${segment.duration} minutes`,
             description: segment.description,
             duration: segment.duration,
             jeopardyCategories: categories,
-            speakerNotes: `Click on any tile to reveal the question. Click again to show the answer. Mark as complete when done.`
+            speakerNotes: `Click on any tile to reveal the question. Click again to show the answer. Mark as complete when done.`,
           });
         } catch (error) {
-          console.error('Error parsing Jeopardy data:', error);
+          console.error("Error parsing Jeopardy data:", error);
           slides.push({
-            type: 'segment',
+            type: "segment",
             title: segment.title,
             subtitle: `${segment.duration} minutes`,
             description: segment.description,
             duration: segment.duration,
             segmentType: segment.type,
-            speakerNotes: segment.content || `Notes for ${segment.title}`
+            speakerNotes: segment.content || `Notes for ${segment.title}`,
           });
         }
       }
       // Special handling for Slide Show segments
-      else if (segment.type === 'activity' && segment.title === 'Slide Show') {
+      else if (segment.type === "activity" && segment.title === "Slide Show") {
         try {
           const slideShowData = JSON.parse(segment.content);
           slides.push({
-            type: 'slideshow',
-            title: 'Slide Show',
+            type: "slideshow",
+            title: "Slide Show",
             subtitle: `${segment.duration} minutes`,
             description: segment.description,
             duration: segment.duration,
             photoUrls: slideShowData.photoUrls || [],
-            speakerNotes: `Enjoy the slideshow! Photos will auto-advance every 3 seconds. Use arrow keys or click to navigate manually.`
+            speakerNotes: `Enjoy the slideshow! Photos will auto-advance every 3 seconds. Use arrow keys or click to navigate manually.`,
           });
         } catch (error) {
-          console.error('Error parsing slideshow data:', error);
+          console.error("Error parsing slideshow data:", error);
           slides.push({
-            type: 'segment',
+            type: "segment",
             title: segment.title,
             subtitle: `${segment.duration} minutes`,
             description: segment.description,
             duration: segment.duration,
             segmentType: segment.type,
-            speakerNotes: segment.content || `Notes for ${segment.title}`
+            speakerNotes: segment.content || `Notes for ${segment.title}`,
           });
         }
       } else {
         slides.push({
-          type: 'segment',
+          type: "segment",
           title: segment.title,
           subtitle: `${segment.duration} minutes`,
           description: segment.description,
           duration: segment.duration,
           segmentType: segment.type,
-          speakerNotes: segment.content || `Notes for ${segment.title}`
+          speakerNotes: segment.content || `Notes for ${segment.title}`,
         });
       }
 
       // Add fun fact slides for segments that have personal fun facts
-      if (segment.personalFunFacts && Object.keys(segment.personalFunFacts).length > 0) {
-        Object.entries(segment.personalFunFacts).forEach(([guestId, funFact]) => {
-          const guest = event.guests.find(g => g.id === guestId);
-          if (guest && funFact) {
-            slides.push({
-              type: 'funfact',
-              title: "Personal Fun Fact!",
-              duration: 2, // 2 minutes for discussion
-              funFact: funFact,
-              guestName: guest.name,
-              guestId: guestId,
-              speakerNotes: `This fun fact belongs to ${guest.name}. Give guests time to discuss and guess before revealing the answer.`
-            });
-          }
-        });
+      if (
+        segment.personalFunFacts &&
+        Object.keys(segment.personalFunFacts).length > 0
+      ) {
+        Object.entries(segment.personalFunFacts).forEach(
+          ([guestId, funFact]) => {
+            const guest = event.guests.find((g) => g.id === guestId);
+            if (guest && funFact) {
+              slides.push({
+                type: "funfact",
+                title: "Personal Fun Fact!",
+                duration: 2, // 2 minutes for discussion
+                funFact: funFact,
+                guestName: guest.name,
+                guestId: guestId,
+                speakerNotes: `This fun fact belongs to ${guest.name}. Give guests time to discuss and guess before revealing the answer.`,
+              });
+            }
+          },
+        );
       }
     });
 
     // Closing slide
     slides.push({
-      type: 'closing',
+      type: "closing",
       title: "Thanks for Coming!",
       subtitle: "Event Complete",
-      description: "Hope you had a great time! Don't forget to take photos and share memories."
+      description:
+        "Hope you had a great time! Don't forget to take photos and share memories.",
     });
 
     return slides;
@@ -463,65 +511,81 @@ function PresentationPageContent() {
   }, [showFunFactAnswer]);
 
   // Keyboard navigation
-  const handleKeyPress = useCallback((e: KeyboardEvent) => {
-    switch (e.key) {
-      case 'ArrowLeft':
-      case 'ArrowUp':
-        goToPreviousSlide();
-        break;
-      case 'ArrowRight':
-      case 'ArrowDown':
-      case ' ':
-        e.preventDefault();
-        goToNextSlide();
-        break;
-      case 'Escape':
-        if (isFullScreen) {
-          exitFullScreen();
-        } else {
-          setShowExitModal(true);
-        }
-        break;
-      case 'f':
-      case 'F':
-        if (isFullScreen) {
-          exitFullScreen();
-        } else {
-          enterFullScreen();
-        }
-        break;
-      case 'n':
-      case 'N':
-        togglePresenterNotes();
-        break;
-      case 'r':
-      case 'R':
-        if (currentSlide?.type === 'funfact') {
-          toggleFunFactAnswer();
-        }
-        break;
-      case 's':
-      case 'S':
-        if (currentSlide?.type === 'spinthewheel') {
-          // Trigger spin from parent component
-          const spinButton = document.querySelector('[data-spin-wheel]') as HTMLButtonElement;
-          if (spinButton && !spinButton.disabled) {
-            spinButton.click();
+  const handleKeyPress = useCallback(
+    (e: KeyboardEvent) => {
+      switch (e.key) {
+        case "ArrowLeft":
+        case "ArrowUp":
+          goToPreviousSlide();
+          break;
+        case "ArrowRight":
+        case "ArrowDown":
+        case " ":
+          e.preventDefault();
+          goToNextSlide();
+          break;
+        case "Escape":
+          if (isFullScreen) {
+            exitFullScreen();
+          } else {
+            setShowExitModal(true);
           }
-        }
-        break;
-      case 'j':
-      case 'J':
-        if (currentSlide?.type === 'jeopardy') {
-          // Trigger Jeopardy tile click (first available hidden tile)
-          const hiddenTile = document.querySelector('[data-jeopardy-tile="hidden"]') as HTMLButtonElement;
-          if (hiddenTile && !hiddenTile.disabled) {
-            hiddenTile.click();
+          break;
+        case "f":
+        case "F":
+          if (isFullScreen) {
+            exitFullScreen();
+          } else {
+            enterFullScreen();
           }
-        }
-        break;
-    }
-  }, [currentSlide?.type, goToNextSlide, goToPreviousSlide, toggleFunFactAnswer, togglePresenterNotes, isFullScreen, enterFullScreen, exitFullScreen]);
+          break;
+        case "n":
+        case "N":
+          togglePresenterNotes();
+          break;
+        case "r":
+        case "R":
+          if (currentSlide?.type === "funfact") {
+            toggleFunFactAnswer();
+          }
+          break;
+        case "s":
+        case "S":
+          if (currentSlide?.type === "spinthewheel") {
+            // Trigger spin from parent component
+            const spinButton = document.querySelector(
+              "[data-spin-wheel]",
+            ) as HTMLButtonElement;
+            if (spinButton && !spinButton.disabled) {
+              spinButton.click();
+            }
+          }
+          break;
+        case "j":
+        case "J":
+          if (currentSlide?.type === "jeopardy") {
+            // Trigger Jeopardy tile click (first available hidden tile)
+            const hiddenTile = document.querySelector(
+              '[data-jeopardy-tile="hidden"]',
+            ) as HTMLButtonElement;
+            if (hiddenTile && !hiddenTile.disabled) {
+              hiddenTile.click();
+            }
+          }
+          break;
+      }
+    },
+    [
+      currentSlide?.type,
+      goToNextSlide,
+      goToPreviousSlide,
+      toggleFunFactAnswer,
+      togglePresenterNotes,
+      isFullScreen,
+      enterFullScreen,
+      exitFullScreen,
+    ],
+  );
 
   // Touch/swipe navigation
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -537,7 +601,7 @@ function PresentationPageContent() {
 
   const handleTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
-    
+
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > 50;
     const isRightSwipe = distance < -50;
@@ -556,13 +620,13 @@ function PresentationPageContent() {
     if (isFullScreen) {
       exitFullScreen();
     }
-    router.push('/newEvent');
+    router.push("/newEvent");
   };
 
   // Event listeners
   useEffect(() => {
-    document.addEventListener('keydown', handleKeyPress);
-    return () => document.removeEventListener('keydown', handleKeyPress);
+    document.addEventListener("keydown", handleKeyPress);
+    return () => document.removeEventListener("keydown", handleKeyPress);
   }, [handleKeyPress]);
 
   // Loading state
@@ -571,7 +635,9 @@ function PresentationPageContent() {
       <div className="min-h-screen bg-gradient-to-br from-deep-sea/5 via-white to-kimchi/5 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-bounce">🎬</div>
-          <h2 className="text-2xl font-bold text-dark-royalty mb-2">Loading Presentation...</h2>
+          <h2 className="text-2xl font-bold text-dark-royalty mb-2">
+            Loading Presentation...
+          </h2>
           <p className="text-deep-sea/70">Getting your event ready</p>
         </div>
       </div>
@@ -583,7 +649,9 @@ function PresentationPageContent() {
       <div className="min-h-screen bg-gradient-to-br from-deep-sea/5 via-white to-kimchi/5 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">❌</div>
-          <h2 className="text-2xl font-bold text-dark-royalty mb-2">No Slides Available</h2>
+          <h2 className="text-2xl font-bold text-dark-royalty mb-2">
+            No Slides Available
+          </h2>
           <p className="text-deep-sea/70">Please check your event setup</p>
           <button
             onClick={handleExit}
@@ -604,9 +672,12 @@ function PresentationPageContent() {
           <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 max-w-md w-full border border-dark-royalty/20 shadow-2xl">
             <div className="text-center">
               <div className="text-6xl mb-4">🖥️</div>
-              <h2 className="text-2xl font-bold text-dark-royalty mb-4">Enter Full Screen Mode</h2>
+              <h2 className="text-2xl font-bold text-dark-royalty mb-4">
+                Enter Full Screen Mode
+              </h2>
               <p className="text-deep-sea/70 mb-6">
-                For the best presentation experience, we recommend viewing in full screen mode.
+                For the best presentation experience, we recommend viewing in
+                full screen mode.
               </p>
               <div className="flex space-x-4">
                 <button
@@ -631,7 +702,7 @@ function PresentationPageContent() {
       )}
 
       {/* Main Presentation */}
-      <div 
+      <div
         className={`fixed inset-0 ${getSlideBackground()} transition-all duration-500`}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -668,7 +739,7 @@ function PresentationPageContent() {
             )}
 
             {/* Fun Fact specific content */}
-            {currentSlide.type === 'funfact' && (
+            {currentSlide.type === "funfact" && (
               <div className="mt-8 space-y-6">
                 {/* Fun Fact Display */}
                 <div className="bg-white/30 backdrop-blur-sm rounded-2xl p-8 border border-dark-royalty/20">
@@ -680,13 +751,18 @@ function PresentationPageContent() {
                 {/* Answer Section */}
                 {showFunFactAnswer ? (
                   <div className="bg-green-50/80 backdrop-blur-sm rounded-2xl p-6 border border-green-500/30 animate-pulse">
-                    <h3 className="text-3xl font-bold text-green-700 mb-2">{currentSlide.guestName}</h3>
+                    <h3 className="text-3xl font-bold text-green-700 mb-2">
+                      {currentSlide.guestName}
+                    </h3>
                   </div>
                 ) : (
                   <div className="bg-yellow-50/80 backdrop-blur-sm rounded-2xl p-6 border border-yellow-500/30">
-                    <h3 className="text-xl font-bold text-yellow-700 mb-2">Take Your Guess!</h3>
+                    <h3 className="text-xl font-bold text-yellow-700 mb-2">
+                      Take Your Guess!
+                    </h3>
                     <p className="text-lg text-yellow-600">
-                      Discuss with the group and try to guess who this fun fact belongs to!
+                      Discuss with the group and try to guess who this fun fact
+                      belongs to!
                     </p>
                   </div>
                 )}
@@ -696,34 +772,32 @@ function PresentationPageContent() {
                   <button
                     onClick={toggleFunFactAnswer}
                     className={`px-6 py-3 rounded-xl transition-all duration-300 font-medium ${
-                      showFunFactAnswer 
-                        ? 'bg-yellow-500 text-white hover:bg-yellow-600' 
-                        : 'bg-green-500 text-white hover:bg-green-600'
+                      showFunFactAnswer
+                        ? "bg-yellow-500 text-white hover:bg-yellow-600"
+                        : "bg-green-500 text-white hover:bg-green-600"
                     }`}
                   >
-                    {showFunFactAnswer ? 'Hide Answer' : 'Reveal Answer'} (R)
+                    {showFunFactAnswer ? "Hide Answer" : "Reveal Answer"} (R)
                   </button>
                 </div>
               </div>
             )}
 
             {/* Spin The Wheel specific content */}
-            {currentSlide.type === 'spinthewheel' && (
+            {currentSlide.type === "spinthewheel" && (
               <SpinTheWheelPresentation
-                challenge={currentSlide.challenge || ''}
+                challenge={currentSlide.challenge || ""}
                 guests={currentSlide.guests || []}
               />
             )}
 
             {/* Slide Show specific content */}
-            {currentSlide.type === 'slideshow' && (
-              <SlideShowPresentation
-                photoUrls={currentSlide.photoUrls || []}
-              />
+            {currentSlide.type === "slideshow" && (
+              <SlideShowPresentation photoUrls={currentSlide.photoUrls || []} />
             )}
 
             {/* Jeopardy specific content */}
-            {currentSlide.type === 'jeopardy' && (
+            {currentSlide.type === "jeopardy" && (
               <JeopardyPresentation
                 categories={currentSlide.jeopardyCategories || []}
                 tileStates={jeopardyTileStates}
@@ -747,7 +821,9 @@ function PresentationPageContent() {
                   ×
                 </button>
               </div>
-              <p className="text-sm leading-relaxed">{currentSlide.speakerNotes}</p>
+              <p className="text-sm leading-relaxed">
+                {currentSlide.speakerNotes}
+              </p>
             </div>
           )}
         </div>
@@ -759,13 +835,20 @@ function PresentationPageContent() {
             onClick={goToPreviousSlide}
             disabled={currentSlideIndex === 0}
             className={`absolute left-4 top-1/2 transform -translate-y-1/2 pointer-events-auto transition-all duration-300 ${
-              currentSlideIndex === 0 
-                ? 'text-gray-300 cursor-not-allowed' 
-                : 'text-gray-500 hover:text-gray-700 hover:scale-110'
+              currentSlideIndex === 0
+                ? "text-gray-300 cursor-not-allowed"
+                : "text-gray-500 hover:text-gray-700 hover:scale-110"
             }`}
           >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M15 18l-6-6 6-6"/>
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M15 18l-6-6 6-6" />
             </svg>
           </button>
 
@@ -774,13 +857,20 @@ function PresentationPageContent() {
             onClick={goToNextSlide}
             disabled={currentSlideIndex === slides.length - 1}
             className={`absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-auto transition-all duration-300 ${
-              currentSlideIndex === slides.length - 1 
-                ? 'text-gray-300 cursor-not-allowed' 
-                : 'text-gray-500 hover:text-gray-700 hover:scale-110'
+              currentSlideIndex === slides.length - 1
+                ? "text-gray-300 cursor-not-allowed"
+                : "text-gray-500 hover:text-gray-700 hover:scale-110"
             }`}
           >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 18l6-6-6-6"/>
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M9 18l6-6-6-6" />
             </svg>
           </button>
 
@@ -789,8 +879,15 @@ function PresentationPageContent() {
             onClick={() => setShowExitModal(true)}
             className="absolute top-4 right-4 pointer-events-auto text-gray-500 hover:text-gray-700 hover:scale-110 transition-all duration-300"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 6L6 18M6 6l12 12"/>
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
         </div>
@@ -799,9 +896,12 @@ function PresentationPageContent() {
         {showExitModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 max-w-md w-full border border-dark-royalty/20 shadow-2xl">
-              <h2 className="text-2xl font-bold text-dark-royalty mb-4">End Presentation?</h2>
+              <h2 className="text-2xl font-bold text-dark-royalty mb-4">
+                End Presentation?
+              </h2>
               <p className="text-deep-sea/70 mb-6">
-                You can resume from where you left off, or end the presentation and return to the event dashboard.
+                You can resume from where you left off, or end the presentation
+                and return to the event dashboard.
               </p>
               <div className="flex space-x-4">
                 <button
@@ -827,15 +927,19 @@ function PresentationPageContent() {
 
 export default function PresentationPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-deep-sea/5 via-white to-kimchi/5 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4 animate-bounce">🎬</div>
-          <h2 className="text-2xl font-bold text-dark-royalty mb-2">Loading Presentation...</h2>
-          <p className="text-deep-sea/70">Getting your slides ready</p>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-deep-sea/5 via-white to-kimchi/5 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-6xl mb-4 animate-bounce">🎬</div>
+            <h2 className="text-2xl font-bold text-dark-royalty mb-2">
+              Loading Presentation...
+            </h2>
+            <p className="text-deep-sea/70">Getting your slides ready</p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <PresentationPageContent />
     </Suspense>
   );

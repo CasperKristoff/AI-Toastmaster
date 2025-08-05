@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Guest } from "../../../types/event";
-import Modal from '../../../components/Modal';
+import Modal from "../../../components/Modal";
 
 interface PersonalFunfactProps {
   guests: Guest[];
@@ -14,17 +14,18 @@ interface PersonalFunfactProps {
   onClose?: () => void; // For modal mode
 }
 
-export default function PersonalFunfact({ 
-  guests, 
-  funFacts = {}, 
-  onFunFactsChange, 
+export default function PersonalFunfact({
+  guests,
+  funFacts = {},
+  onFunFactsChange,
   isEditable = false,
   isModal = false,
   isOpen = false,
-  onClose
+  onClose,
 }: PersonalFunfactProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editFunFacts, setEditFunFacts] = useState<Record<string, string>>(funFacts);
+  const [editFunFacts, setEditFunFacts] =
+    useState<Record<string, string>>(funFacts);
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -52,25 +53,27 @@ export default function PersonalFunfact({
   };
 
   const handleFunFactChange = (guestId: string, funFact: string) => {
-    setEditFunFacts(prev => ({
+    setEditFunFacts((prev) => ({
       ...prev,
-      [guestId]: funFact
+      [guestId]: funFact,
     }));
   };
 
-
-
-  const hasAnyFunFacts = Object.values(funFacts).some(fact => fact.trim() !== "");
-  const hasAnyEditFunFacts = Object.values(editFunFacts).some(fact => fact.trim() !== "");
+  const hasAnyFunFacts = Object.values(funFacts).some(
+    (fact) => fact.trim() !== "",
+  );
+  const hasAnyEditFunFacts = Object.values(editFunFacts).some(
+    (fact) => fact.trim() !== "",
+  );
 
   // Modal mode
   if (isModal) {
     if (!isOpen) return null;
 
     return (
-      <Modal 
-        isOpen={isOpen} 
-        onClose={onClose || (() => {})} 
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose || (() => {})}
         title="Personal Fun Facts"
         onSave={handleSave}
         saveDisabled={!hasAnyEditFunFacts}
@@ -80,19 +83,28 @@ export default function PersonalFunfact({
           {guests.length === 0 ? (
             <div className="text-center py-8">
               <div className="text-4xl mb-4">👥</div>
-              <p className="text-deep-sea/70 mb-2 text-lg">No guests added yet</p>
-              <p className="text-sm text-deep-sea/50">Add guests first to create personal fun facts</p>
+              <p className="text-deep-sea/70 mb-2 text-lg">
+                No guests added yet
+              </p>
+              <p className="text-sm text-deep-sea/50">
+                Add guests first to create personal fun facts
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
               {guests.map((guest) => (
-                <div key={guest.id} className="bg-white/50 rounded-lg p-3 border border-dark-royalty/10">
+                <div
+                  key={guest.id}
+                  className="bg-white/50 rounded-lg p-3 border border-dark-royalty/10"
+                >
                   <label className="block text-sm font-medium text-deep-sea mb-2">
                     {guest.name}
                   </label>
                   <textarea
                     value={editFunFacts[guest.id] || ""}
-                    onChange={(e) => handleFunFactChange(guest.id, e.target.value)}
+                    onChange={(e) =>
+                      handleFunFactChange(guest.id, e.target.value)
+                    }
                     rows={2}
                     className="w-full px-4 py-2 rounded-xl border border-dark-royalty/20 bg-white/70 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 focus:border-transparent transition-all duration-300 resize-none"
                     placeholder={`Fun fact about ${guest.name}...`}
@@ -127,7 +139,9 @@ export default function PersonalFunfact({
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
           <div className="text-3xl animate-bounce">👥</div>
-          <h3 className="text-lg font-bold text-dark-royalty">Personal Fun Facts</h3>
+          <h3 className="text-lg font-bold text-dark-royalty">
+            Personal Fun Facts
+          </h3>
         </div>
         {isEditable && !isEditing && (
           <button
@@ -145,7 +159,7 @@ export default function PersonalFunfact({
           <p className="text-sm text-deep-sea/70 mb-4">
             Add fun facts about each guest for this segment...
           </p>
-          
+
           <div className="space-y-3 max-h-60 overflow-y-auto">
             {guests.map((guest) => (
               <div key={guest.id} className="bg-white/50 rounded-lg p-3">
@@ -154,9 +168,11 @@ export default function PersonalFunfact({
                 </label>
                 <textarea
                   value={editFunFacts[guest.id] || ""}
-                  onChange={(e) => handleFunFactChange(guest.id, e.target.value)}
+                  onChange={(e) =>
+                    handleFunFactChange(guest.id, e.target.value)
+                  }
                   onKeyDown={(e) => {
-                    if (e.key === 'Escape') {
+                    if (e.key === "Escape") {
                       handleCancel();
                     }
                   }}
@@ -190,19 +206,23 @@ export default function PersonalFunfact({
               {guests.map((guest) => {
                 const funFact = funFacts[guest.id];
                 if (!funFact || funFact.trim() === "") return null;
-                
+
                 return (
                   <div key={guest.id} className="bg-white/50 rounded-lg p-3">
                     <div className="font-medium text-dark-royalty text-sm mb-1">
                       {guest.name}
                     </div>
-                    <p className="text-deep-sea/80 text-sm italic">&quot;{funFact}&quot;</p>
+                    <p className="text-deep-sea/80 text-sm italic">
+                      &quot;{funFact}&quot;
+                    </p>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <p className="text-deep-sea/60 italic">No personal fun facts added yet...</p>
+            <p className="text-deep-sea/60 italic">
+              No personal fun facts added yet...
+            </p>
           )}
           {isEditable && !hasAnyFunFacts && (
             <button
@@ -220,4 +240,4 @@ export default function PersonalFunfact({
       <div className="absolute bottom-2 left-2 text-xs opacity-30">🎉</div>
     </div>
   );
-} 
+}

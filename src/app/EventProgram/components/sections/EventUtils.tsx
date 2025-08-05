@@ -1,19 +1,17 @@
-
-
 export const formatDate = (date: Date) => {
-  return new Intl.DateTimeFormat('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   }).format(date);
 };
 
 export const formatTime = (time: string) => {
-  return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
+  return new Date(`2000-01-01T${time}`).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
   });
 };
 
@@ -26,7 +24,7 @@ export const getEventTypeIcon = (type: string) => {
     prom: "👑",
     trivia: "🧠",
     glowup: "🔥",
-    breakup: "💔"
+    breakup: "💔",
   };
   return icons[type as keyof typeof icons] || "🎊";
 };
@@ -40,7 +38,7 @@ export const getEventTypeLabel = (type: string) => {
     prom: "Prom or Formal",
     trivia: "Trivia Night",
     glowup: "Glow-Up Party",
-    breakup: "Breakup Bash"
+    breakup: "Breakup Bash",
   };
   return labels[type as keyof typeof labels] || "Event";
 };
@@ -52,7 +50,7 @@ export const getToneLabel = (tone: string) => {
     party: "High Energy Party",
     professional: "Professional",
     wholesome: "Family-Friendly",
-    roast: "Playful & Humorous"
+    roast: "Playful & Humorous",
   };
   return labels[tone as keyof typeof labels] || tone;
 };
@@ -61,10 +59,10 @@ export const getToneLabel = (tone: string) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const cleanUndefinedValues = (obj: any): any => {
   if (obj === null || obj === undefined) return obj;
-  if (typeof obj !== 'object') return obj;
+  if (typeof obj !== "object") return obj;
   if (obj instanceof Date) return obj; // Preserve Date objects
   if (Array.isArray(obj)) return obj.map(cleanUndefinedValues);
-  
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cleaned: any = {};
   for (const [key, value] of Object.entries(obj)) {
@@ -73,4 +71,4 @@ export const cleanUndefinedValues = (obj: any): any => {
     }
   }
   return cleaned;
-}; 
+};

@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface ModalProps {
   isOpen: boolean;
@@ -14,8 +14,8 @@ const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   children,
-  maxWidth = 'max-w-lg',
-  minHeight = 'min-h-[360px]',
+  maxWidth = "max-w-lg",
+  minHeight = "min-h-[360px]",
 }) => {
   if (!isOpen) return null;
 
@@ -25,7 +25,9 @@ const Modal: React.FC<ModalProps> = ({
         className={`bg-white/95 backdrop-blur-xl rounded-3xl p-5 w-full ${maxWidth} max-h-[90vh] ${minHeight} overflow-y-auto border border-dark-royalty/20 shadow-2xl`}
       >
         <div className="flex justify-between items-center mb-6">
-          {title && <h2 className="text-2xl font-bold text-dark-royalty">{title}</h2>}
+          {title && (
+            <h2 className="text-2xl font-bold text-dark-royalty">{title}</h2>
+          )}
           <button
             onClick={onClose}
             className="text-deep-sea/60 hover:text-dark-royalty transition-colors text-2xl"

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { Event, EventSegment } from '../../../types/event';
-import PersonalFunfact from './PersonalFunfact';
-import SpinTheWheel from './SpinTheWheel';
-import SlideShow from './SlideShow';
-import Modal from '../../../components/Modal';
+import React, { useState } from "react";
+import { Event, EventSegment } from "../../../types/event";
+import PersonalFunfact from "./PersonalFunfact";
+import SpinTheWheel from "./SpinTheWheel";
+import SlideShow from "./SlideShow";
+import Modal from "../../../components/Modal";
 
 interface AISegmentsProps {
   event: Event;
@@ -16,10 +16,13 @@ const AISegments: React.FC<AISegmentsProps> = ({
   event,
   isOpen,
   onClose,
-  onAddSegment
+  onAddSegment,
 }) => {
-  const [personalFunFacts, setPersonalFunFacts] = useState<Record<string, string>>({});
-  const [showPersonalFunFactsModal, setShowPersonalFunFactsModal] = useState(false);
+  const [personalFunFacts, setPersonalFunFacts] = useState<
+    Record<string, string>
+  >({});
+  const [showPersonalFunFactsModal, setShowPersonalFunFactsModal] =
+    useState(false);
   const [showSpinTheWheelModal, setShowSpinTheWheelModal] = useState(false);
   const [showSlideShowModal, setShowSlideShowModal] = useState(false);
 
@@ -28,11 +31,11 @@ const AISegments: React.FC<AISegmentsProps> = ({
     setShowPersonalFunFactsModal(false);
     onAddSegment({
       id: Date.now().toString(),
-      title: 'Personal Fun Facts',
-      type: 'game',
-      description: 'Guess who each fun fact belongs to!',
+      title: "Personal Fun Facts",
+      type: "game",
+      description: "Guess who each fun fact belongs to!",
       duration: Object.keys(funFacts).length * 2,
-      content: 'Each fun fact will be shown individually.',
+      content: "Each fun fact will be shown individually.",
       order: 0,
       personalFunFacts: funFacts,
     });
@@ -44,8 +47,8 @@ const AISegments: React.FC<AISegmentsProps> = ({
     setShowSpinTheWheelModal(false);
     onAddSegment({
       id: Date.now().toString(),
-      title: 'Spin The Wheel',
-      type: 'game',
+      title: "Spin The Wheel",
+      type: "game",
       description: challenge,
       duration: 5,
       content: `Challenge: ${challenge}`,
@@ -70,12 +73,16 @@ const AISegments: React.FC<AISegmentsProps> = ({
           {event.guests.length === 0 ? (
             <div className="text-center py-6">
               <div className="text-4xl mb-3">👥</div>
-              <p className="text-deep-sea/70 mb-2 text-base">No guests added yet</p>
-              <p className="text-sm text-deep-sea/50">Add guests first to create personal fun facts</p>
+              <p className="text-deep-sea/70 mb-2 text-base">
+                No guests added yet
+              </p>
+              <p className="text-sm text-deep-sea/50">
+                Add guests first to create personal fun facts
+              </p>
             </div>
           ) : (
             <>
-              <div 
+              <div
                 className="group bg-gradient-to-br from-white/80 to-white/60 backdrop-blur-sm rounded-lg p-6 border border-dark-royalty/10 hover:border-dark-royalty/30 transition-all duration-300 hover:shadow-lg cursor-pointer"
                 onClick={() => setShowPersonalFunFactsModal(true)}
               >
@@ -102,10 +109,23 @@ const AISegments: React.FC<AISegmentsProps> = ({
               >
                 <div className="flex items-center space-x-4">
                   <div className="text-3xl group-hover:scale-110 transition-transform duration-300">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor"/>
-                      <path d="M12 2v20M12 2l-3 3M12 2l3 3"/>
-                      <circle cx="12" cy="12" r="3" fill="currentColor"/>
+                    <svg
+                      width="32"
+                      height="32"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        fill="none"
+                        stroke="currentColor"
+                      />
+                      <path d="M12 2v20M12 2l-3 3M12 2l3 3" />
+                      <circle cx="12" cy="12" r="3" fill="currentColor" />
                     </svg>
                   </div>
                   <div className="flex-1">
@@ -126,7 +146,9 @@ const AISegments: React.FC<AISegmentsProps> = ({
                 onClick={() => setShowSlideShowModal(true)}
               >
                 <div className="flex items-center space-x-4">
-                  <div className="text-3xl group-hover:scale-110 transition-transform duration-300">📸</div>
+                  <div className="text-3xl group-hover:scale-110 transition-transform duration-300">
+                    📸
+                  </div>
                   <div className="flex-1">
                     <h3 className="text-lg font-bold text-dark-royalty mb-1">
                       Slide Show
@@ -173,4 +195,4 @@ const AISegments: React.FC<AISegmentsProps> = ({
   );
 };
 
-export default AISegments; 
+export default AISegments;

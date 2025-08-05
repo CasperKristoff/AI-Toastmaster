@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Event } from '../../../types/event';
+import React, { useState } from "react";
+import { Event } from "../../../types/event";
 
 interface GuestsProps {
   event: Event;
@@ -10,14 +10,14 @@ interface GuestsProps {
 const Guests: React.FC<GuestsProps> = ({
   event,
   onEventUpdate,
-  setShowAddGuestModal
+  setShowAddGuestModal,
 }) => {
   const [editingGuest, setEditingGuest] = useState<string | null>(null);
   const [editGuestName, setEditGuestName] = useState("");
 
   const handleEditGuest = (guestId: string) => {
     if (!event) return;
-    const guest = event.guests.find(g => g.id === guestId);
+    const guest = event.guests.find((g) => g.id === guestId);
     if (guest) {
       setEditingGuest(guestId);
       setEditGuestName(guest.name);
@@ -28,15 +28,15 @@ const Guests: React.FC<GuestsProps> = ({
     if (editGuestName.trim() && event) {
       const updatedEvent: Event = {
         ...event,
-        guests: event.guests.map(guest => 
-          guest.id === guestId 
+        guests: event.guests.map((guest) =>
+          guest.id === guestId
             ? { ...guest, name: editGuestName.trim() }
-            : guest
+            : guest,
         ),
       };
-      
+
       onEventUpdate(updatedEvent);
-      
+
       setEditingGuest(null);
       setEditGuestName("");
     }
@@ -47,14 +47,12 @@ const Guests: React.FC<GuestsProps> = ({
     setEditGuestName("");
   };
 
-
-
   const handleDeleteGuest = (guestId: string) => {
     const updatedEvent: Event = {
       ...event,
-      guests: event.guests.filter(guest => guest.id !== guestId)
+      guests: event.guests.filter((guest) => guest.id !== guestId),
     };
-    
+
     onEventUpdate(updatedEvent);
   };
 
@@ -63,22 +61,29 @@ const Guests: React.FC<GuestsProps> = ({
       <div className="flex justify-between items-center w-full">
         <div className="flex-1 min-w-0">
           <h2 className="text-3xl font-bold text-dark-royalty">Guest List</h2>
-          <p className="text-deep-sea/70 mt-2">Manage your event attendees and their details</p>
+          <p className="text-deep-sea/70 mt-2">
+            Manage your event attendees and their details
+          </p>
         </div>
-        <button 
+        <button
           onClick={() => setShowAddGuestModal(true)}
           className="px-6 py-3 bg-dark-royalty text-white rounded-xl hover:bg-dark-royalty/90 transition-all duration-300 hover:scale-105 font-medium flex-shrink-0"
         >
           + Add Guest
         </button>
       </div>
-      
+
       {event.guests.length === 0 ? (
         <div className="text-center py-16 w-full">
           <div className="text-8xl mb-6 animate-bounce">👥</div>
-          <h3 className="text-2xl font-bold text-dark-royalty mb-3">No Guests Yet</h3>
-          <p className="text-deep-sea/70 mb-8 max-w-md mx-auto">Start building your guest list to get personalized AI content and better event planning recommendations.</p>
-          <button 
+          <h3 className="text-2xl font-bold text-dark-royalty mb-3">
+            No Guests Yet
+          </h3>
+          <p className="text-deep-sea/70 mb-8 max-w-md mx-auto">
+            Start building your guest list to get personalized AI content and
+            better event planning recommendations.
+          </p>
+          <button
             onClick={() => setShowAddGuestModal(true)}
             className="px-8 py-4 bg-dark-royalty text-white rounded-xl hover:bg-dark-royalty/90 transition-all duration-300 hover:scale-105 font-medium"
           >
@@ -88,12 +93,15 @@ const Guests: React.FC<GuestsProps> = ({
       ) : (
         <div className="space-y-3 w-full">
           {event.guests.map((guest) => (
-            <div key={guest.id} className="group bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-dark-royalty/10 hover:border-dark-royalty/30 transition-all duration-300 hover:shadow-lg hover:bg-white/90 w-full">
+            <div
+              key={guest.id}
+              className="group bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-dark-royalty/10 hover:border-dark-royalty/30 transition-all duration-300 hover:shadow-lg hover:bg-white/90 w-full"
+            >
               <div className="flex items-center space-x-4 w-full">
                 <div className="w-12 h-12 bg-gradient-to-br from-deep-sea/30 to-dark-royalty/30 rounded-full flex items-center justify-center text-lg font-bold text-dark-royalty group-hover:scale-105 transition-transform duration-300 flex-shrink-0">
                   {guest.name.charAt(0)}
                 </div>
-                
+
                 <div className="flex-1 min-w-0">
                   {editingGuest === guest.id ? (
                     <div className="space-y-2 w-full">
@@ -102,9 +110,9 @@ const Guests: React.FC<GuestsProps> = ({
                         value={editGuestName}
                         onChange={(e) => setEditGuestName(e.target.value)}
                         onKeyPress={(e) => {
-                          if (e.key === 'Enter') {
+                          if (e.key === "Enter") {
                             handleSaveEdit(guest.id);
-                          } else if (e.key === 'Escape') {
+                          } else if (e.key === "Escape") {
                             handleCancelEdit();
                           }
                         }}
@@ -139,17 +147,17 @@ const Guests: React.FC<GuestsProps> = ({
                     </>
                   )}
                 </div>
-                
+
                 {editingGuest !== guest.id && (
                   <div className="flex items-center space-x-2 flex-shrink-0">
-                    <button 
+                    <button
                       onClick={() => handleEditGuest(guest.id)}
                       className="p-2 text-deep-sea/60 hover:text-dark-royalty transition-colors rounded-lg hover:bg-deep-sea/10"
                       title="Edit guest"
                     >
                       <span className="text-sm">✏️</span>
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleDeleteGuest(guest.id)}
                       className="p-2 text-deep-sea/60 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
                       title="Delete guest"
@@ -167,4 +175,4 @@ const Guests: React.FC<GuestsProps> = ({
   );
 };
 
-export default Guests; 
+export default Guests;

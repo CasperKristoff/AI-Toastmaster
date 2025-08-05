@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Event, EventSegment } from '../../../types/event';
-import Modal from '../../../components/Modal';
+import React, { useState, useRef, useEffect } from "react";
+import Image from "next/image";
+import { Event, EventSegment } from "../../../types/event";
+import Modal from "../../../components/Modal";
 
 interface SlideShowProps {
   event: Event;
@@ -14,7 +15,7 @@ const SlideShow: React.FC<SlideShowProps> = ({
   isOpen,
   onClose,
   onSave,
-  initialSegment
+  initialSegment,
 }) => {
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
@@ -24,15 +25,23 @@ const SlideShow: React.FC<SlideShowProps> = ({
 
   // Load existing photos when editing
   useEffect(() => {
-    if (initialSegment && initialSegment.content && initialSegment.title === 'Slide Show') {
+    if (
+      initialSegment &&
+      initialSegment.content &&
+      initialSegment.title === "Slide Show"
+    ) {
       try {
         const contentData = JSON.parse(initialSegment.content);
         if (contentData.photoUrls && Array.isArray(contentData.photoUrls)) {
           setPhotoUrls(contentData.photoUrls);
-          console.log('Loaded', contentData.photoUrls.length, 'existing photos');
+          console.log(
+            "Loaded",
+            contentData.photoUrls.length,
+            "existing photos",
+          );
         }
       } catch (error) {
-        console.error('Error parsing slide show content:', error);
+        console.error("Error parsing slide show content:", error);
       }
     }
   }, [initialSegment]);
@@ -56,7 +65,7 @@ const SlideShow: React.FC<SlideShowProps> = ({
       const newUrls: string[] = [];
 
       for (const file of Array.from(files)) {
-        if (file.type.startsWith('image/')) {
+        if (file.type.startsWith("image/")) {
           newPhotos.push(file);
           // Convert to base64 data URL instead of blob URL
           const dataUrl = await fileToDataUrl(file);
@@ -64,10 +73,10 @@ const SlideShow: React.FC<SlideShowProps> = ({
         }
       }
 
-      setPhotos(prev => [...prev, ...newPhotos]);
-      setPhotoUrls(prev => [...prev, ...newUrls]);
+      setPhotos((prev) => [...prev, ...newPhotos]);
+      setPhotoUrls((prev) => [...prev, ...newUrls]);
     } catch (error) {
-      console.error('Error processing images:', error);
+      console.error("Error processing images:", error);
     } finally {
       setIsLoading(false);
     }
@@ -90,8 +99,8 @@ const SlideShow: React.FC<SlideShowProps> = ({
   };
 
   const removePhoto = (index: number) => {
-    setPhotos(prev => prev.filter((_, i) => i !== index));
-    setPhotoUrls(prev => prev.filter((_, i) => i !== index));
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+    setPhotoUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSave = () => {
@@ -100,17 +109,17 @@ const SlideShow: React.FC<SlideShowProps> = ({
     // Create a segment with photo data URLs
     const segment: EventSegment = {
       id: Date.now().toString(),
-      title: 'Slide Show',
-      type: 'activity',
+      title: "Slide Show",
+      type: "activity",
       description: `${photoUrls.length} photos in slideshow`,
       duration: photoUrls.length * 3, // 3 seconds per photo
       content: JSON.stringify({
         photoUrls: photoUrls, // Store the base64 data URLs
-        photos: photos.map(file => ({
+        photos: photos.map((file) => ({
           name: file.name,
           size: file.size,
-          type: file.type
-        }))
+          type: file.type,
+        })),
       }),
       order: 0,
       isCustom: true,
@@ -126,10 +135,10 @@ const SlideShow: React.FC<SlideShowProps> = ({
   };
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={handleClose} 
-      title="Create Slide Show" 
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Create Slide Show"
       maxWidth="max-w-2xl"
       onSave={handleSave}
       saveDisabled={photoUrls.length === 0 || isLoading}
@@ -140,8 +149,8 @@ const SlideShow: React.FC<SlideShowProps> = ({
         <div
           className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${
             isDragging
-              ? 'border-dark-royalty bg-dark-royalty/5'
-              : 'border-deep-sea/30 hover:border-deep-sea/50'
+              ? "border-dark-royalty bg-dark-royalty/5"
+              : "border-deep-sea/30 hover:border-deep-sea/50"
           }`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -149,7 +158,9 @@ const SlideShow: React.FC<SlideShowProps> = ({
         >
           <div className="text-4xl mb-4">📸</div>
           <h3 className="text-lg font-semibold text-dark-royalty mb-2">
-            {initialSegment ? 'Re-upload Photos for Slideshow' : 'Upload Photos for Slideshow'}
+            {initialSegment
+              ? "Re-upload Photos for Slideshow"
+              : "Upload Photos for Slideshow"}
           </h3>
           {initialSegment && (
             <p className="text-deep-sea/70 mb-4">
@@ -163,10 +174,10 @@ const SlideShow: React.FC<SlideShowProps> = ({
             onClick={() => fileInputRef.current?.click()}
             disabled={isLoading}
             className={`px-6 py-3 bg-dark-royalty text-white rounded-xl hover:bg-dark-royalty/90 transition-all duration-300 font-medium ${
-              isLoading ? 'opacity-50 cursor-not-allowed' : ''
+              isLoading ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
-            {isLoading ? 'Processing...' : 'Choose Photos'}
+            {isLoading ? "Processing..." : "Choose Photos"}
           </button>
           <input
             ref={fileInputRef}
@@ -187,11 +198,12 @@ const SlideShow: React.FC<SlideShowProps> = ({
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-64 overflow-y-auto">
               {photoUrls.map((url, index) => (
                 <div key={index} className="relative group">
-                  <img
+                  <Image
                     src={url}
                     alt={`Photo ${index + 1}`}
+                    width={200}
+                    height={96}
                     className="w-full h-24 object-cover rounded-lg border border-deep-sea/20"
-                    loading="lazy"
                   />
                   <button
                     onClick={() => removePhoto(index)}
@@ -221,11 +233,11 @@ const SlideShow: React.FC<SlideShowProps> = ({
             disabled={photoUrls.length === 0 || isLoading}
             className={`px-6 py-3 rounded-xl transition-all duration-300 font-medium ${
               photoUrls.length === 0 || isLoading
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-dark-royalty text-white hover:bg-dark-royalty/90'
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-dark-royalty text-white hover:bg-dark-royalty/90"
             }`}
           >
-            {initialSegment ? 'Update Slide Show' : 'Create Slide Show'}
+            {initialSegment ? "Update Slide Show" : "Create Slide Show"}
           </button>
         </div>
       </div>
@@ -233,4 +245,4 @@ const SlideShow: React.FC<SlideShowProps> = ({
   );
 };
 
-export default SlideShow; 
+export default SlideShow;

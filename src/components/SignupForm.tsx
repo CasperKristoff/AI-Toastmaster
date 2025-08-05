@@ -22,7 +22,11 @@ export default function SignupForm({ onSignupSuccess }: SignupFormProps) {
     setIsLoading(true);
     const auth = getAuth(app);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
       setSuccess("Signup successful! You can now log in.");
       if (onSignupSuccess) onSignupSuccess(userCredential.user);
     } catch (err: unknown) {
@@ -56,7 +60,10 @@ export default function SignupForm({ onSignupSuccess }: SignupFormProps) {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-deep-sea mb-2">
+                    <label
+                      htmlFor="email"
+                      className="block text-sm font-medium text-deep-sea mb-2"
+                    >
                       Email Address
                     </label>
                     <input
@@ -70,7 +77,10 @@ export default function SignupForm({ onSignupSuccess }: SignupFormProps) {
                     />
                   </div>
                   <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-deep-sea mb-2">
+                    <label
+                      htmlFor="password"
+                      className="block text-sm font-medium text-deep-sea mb-2"
+                    >
                       Password
                     </label>
                     <input
@@ -100,7 +110,7 @@ export default function SignupForm({ onSignupSuccess }: SignupFormProps) {
                   className="w-full group relative bg-gradient-to-r from-dark-royalty/100 to-dark-royalty/75 text-white px-8 py-4 rounded-xl font-poppins text-lg font-medium tracking-wide shadow-lg shadow-deep-sea/20 hover:shadow-md hover:shadow-deep-sea/25 transition-all duration-300 ease-out hover:-translate-y-[1px] disabled:opacity-70 disabled:hover:translate-y-0"
                 >
                   <span className="relative z-10">
-                    {isLoading ? 'Signing Up...' : 'Sign Up'}
+                    {isLoading ? "Signing Up..." : "Sign Up"}
                   </span>
                   <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-dark-royalty/80 to-dark-royalty opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out"></div>
                 </button>
@@ -111,4 +121,4 @@ export default function SignupForm({ onSignupSuccess }: SignupFormProps) {
       </div>
     </div>
   );
-} 
+}

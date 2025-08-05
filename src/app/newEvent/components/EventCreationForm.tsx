@@ -4,10 +4,14 @@ import { useState } from "react";
 import { Event, EventType, EventTone } from "../../../types/event";
 
 interface EventCreationFormProps {
-  onEventCreated?: (event: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onEventCreated?: (
+    event: Omit<Event, "id" | "createdAt" | "updatedAt">,
+  ) => void;
 }
 
-export default function EventCreationForm({ onEventCreated }: EventCreationFormProps) {
+export default function EventCreationForm({
+  onEventCreated,
+}: EventCreationFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     type: "" as EventType,
@@ -16,40 +20,87 @@ export default function EventCreationForm({ onEventCreated }: EventCreationFormP
     startTime: "18:00",
   });
 
-  const eventTypes: { value: EventType; label: string; description: string }[] = [
-    { value: "bachelor", label: "🕺 Bachelor(ette) Party", description: "Pre-wedding chaos and bonding." },
-    { value: "theme", label: "🎭 Theme Party", description: "From 1920s speakeasy to Y2K rave – full immersion recommended." },
-    { value: "house", label: "🍻 House Party", description: "Your place, your rules – AI helps keep things (slightly) under control." },
-    { value: "roast", label: "🎂 Roast Night", description: "One guest, all the heat. AI writes the jokes." },
-    { value: "prom", label: "👑 Prom or Formal", description: "Elegance, drama, and awkward dancing encouraged." },
-    { value: "trivia", label: "🧠 Trivia Night", description: "Full of quizzes, points, and petty competition." },
-    { value: "glowup", label: "🔥 Glow-Up Party", description: "Celebrating a transformation – birthdays, breakups, or bold life changes." },
-    { value: "breakup", label: "💔 Breakup Bash", description: "Closure, cocktails, and controlled chaos." },
-  ];
+  const eventTypes: { value: EventType; label: string; description: string }[] =
+    [
+      {
+        value: "bachelor",
+        label: "🕺 Bachelor(ette) Party",
+        description: "Pre-wedding chaos and bonding.",
+      },
+      {
+        value: "theme",
+        label: "🎭 Theme Party",
+        description:
+          "From 1920s speakeasy to Y2K rave – full immersion recommended.",
+      },
+      {
+        value: "house",
+        label: "🍻 House Party",
+        description:
+          "Your place, your rules – AI helps keep things (slightly) under control.",
+      },
+      {
+        value: "roast",
+        label: "🎂 Roast Night",
+        description: "One guest, all the heat. AI writes the jokes.",
+      },
+      {
+        value: "prom",
+        label: "👑 Prom or Formal",
+        description: "Elegance, drama, and awkward dancing encouraged.",
+      },
+      {
+        value: "trivia",
+        label: "🧠 Trivia Night",
+        description: "Full of quizzes, points, and petty competition.",
+      },
+      {
+        value: "glowup",
+        label: "🔥 Glow-Up Party",
+        description:
+          "Celebrating a transformation – birthdays, breakups, or bold life changes.",
+      },
+      {
+        value: "breakup",
+        label: "💔 Breakup Bash",
+        description: "Closure, cocktails, and controlled chaos.",
+      },
+    ];
 
-  const eventTones: { value: EventTone; label: string; description: string }[] = [
-    { value: "formal", label: "Formal", description: "Elegant and sophisticated" },
-    { value: "casual", label: "Casual", description: "Relaxed and friendly" },
-    { value: "party", label: "Party", description: "High energy and fun" },
-    { value: "professional", label: "Professional", description: "Business appropriate" },
-    { value: "wholesome", label: "Wholesome", description: "Family-friendly and warm" },
-    { value: "roast", label: "Roast", description: "Playful and humorous" },
-  ];
+  const eventTones: { value: EventTone; label: string; description: string }[] =
+    [
+      {
+        value: "formal",
+        label: "Formal",
+        description: "Elegant and sophisticated",
+      },
+      { value: "casual", label: "Casual", description: "Relaxed and friendly" },
+      { value: "party", label: "Party", description: "High energy and fun" },
+      {
+        value: "professional",
+        label: "Professional",
+        description: "Business appropriate",
+      },
+      {
+        value: "wholesome",
+        label: "Wholesome",
+        description: "Family-friendly and warm",
+      },
+      { value: "roast", label: "Roast", description: "Playful and humorous" },
+    ];
 
   const handleInputChange = (field: string, value: string | number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
-
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Create new event object without id, createdAt, updatedAt
-    const newEvent: Omit<Event, 'id' | 'createdAt' | 'updatedAt'> = {
+    const newEvent: Omit<Event, "id" | "createdAt" | "updatedAt"> = {
       userId: "current-user", // will be set by the service
       name: formData.name,
       type: formData.type as EventType,
@@ -63,13 +114,11 @@ export default function EventCreationForm({ onEventCreated }: EventCreationFormP
     };
 
     console.log("Creating event:", newEvent);
-    
+
     if (onEventCreated) {
       onEventCreated(newEvent);
     }
   };
-
-
 
   return (
     <div className="relative">
@@ -92,7 +141,10 @@ export default function EventCreationForm({ onEventCreated }: EventCreationFormP
               {/* Event Name */}
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-deep-sea mb-2">
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-medium text-deep-sea mb-2"
+                  >
                     Event Name *
                   </label>
                   <input
@@ -110,7 +162,10 @@ export default function EventCreationForm({ onEventCreated }: EventCreationFormP
               {/* Event Date and Time */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="date" className="block text-sm font-medium text-deep-sea mb-2">
+                  <label
+                    htmlFor="date"
+                    className="block text-sm font-medium text-deep-sea mb-2"
+                  >
                     Event Date *
                   </label>
                   <input
@@ -119,19 +174,24 @@ export default function EventCreationForm({ onEventCreated }: EventCreationFormP
                     value={formData.date}
                     onChange={(e) => handleInputChange("date", e.target.value)}
                     required
-                    min={new Date().toISOString().split('T')[0]}
+                    min={new Date().toISOString().split("T")[0]}
                     className="w-full px-4 py-3 rounded-xl border border-dark-royalty/20 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 focus:border-transparent transition-all duration-300"
                   />
                 </div>
                 <div>
-                  <label htmlFor="startTime" className="block text-sm font-medium text-deep-sea mb-2">
+                  <label
+                    htmlFor="startTime"
+                    className="block text-sm font-medium text-deep-sea mb-2"
+                  >
                     Event Kickoff *
                   </label>
                   <input
                     id="startTime"
                     type="time"
                     value={formData.startTime}
-                    onChange={(e) => handleInputChange("startTime", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("startTime", e.target.value)
+                    }
                     required
                     className="w-full px-4 py-3 rounded-xl border border-dark-royalty/20 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 focus:border-transparent transition-all duration-300"
                   />
@@ -155,8 +215,12 @@ export default function EventCreationForm({ onEventCreated }: EventCreationFormP
                           : "border-dark-royalty/20 hover:border-dark-royalty/40"
                       }`}
                     >
-                      <div className="font-medium text-dark-royalty">{type.label}</div>
-                      <div className="text-sm text-deep-sea/60">{type.description}</div>
+                      <div className="font-medium text-dark-royalty">
+                        {type.label}
+                      </div>
+                      <div className="text-sm text-deep-sea/60">
+                        {type.description}
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -179,8 +243,12 @@ export default function EventCreationForm({ onEventCreated }: EventCreationFormP
                           : "border-dark-royalty/20 hover:border-dark-royalty/40"
                       }`}
                     >
-                      <div className="font-medium text-dark-royalty">{tone.label}</div>
-                      <div className="text-sm text-deep-sea/60">{tone.description}</div>
+                      <div className="font-medium text-dark-royalty">
+                        {tone.label}
+                      </div>
+                      <div className="text-sm text-deep-sea/60">
+                        {tone.description}
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -190,7 +258,13 @@ export default function EventCreationForm({ onEventCreated }: EventCreationFormP
               <div className="flex justify-center pt-6">
                 <button
                   type="submit"
-                  disabled={!formData.name || !formData.type || !formData.tone || !formData.date || !formData.startTime}
+                  disabled={
+                    !formData.name ||
+                    !formData.type ||
+                    !formData.tone ||
+                    !formData.date ||
+                    !formData.startTime
+                  }
                   className="px-8 py-3 rounded-xl bg-dark-royalty text-white hover:bg-dark-royalty/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Create Event

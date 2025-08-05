@@ -1,36 +1,34 @@
-import React, { useState } from 'react';
-import { Event, EventSegment, SegmentType } from '../../../types/event';
-import PersonalFunfact from '../../EventProgram/components/PersonalFunfact';
-import AISegments from '../../EventProgram/components/sections/AISegments';
+import React, { useState } from "react";
+import { Event, EventSegment, SegmentType } from "../../../types/event";
+import PersonalFunfact from "../../EventProgram/components/PersonalFunfact";
+import AISegments from "../../EventProgram/components/sections/AISegments";
 import {
   DndContext,
   closestCenter,
   DragEndEvent,
   SensorDescriptor,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 import {
   SortableContext,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import {
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+} from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // Draggable Segment Component
-function DraggableSegment({ 
-  segment, 
-  index, 
-  editingSegment, 
-  editSegment, 
-  setEditSegment, 
-  handleEditSegment, 
-  handleSaveSegmentEdit, 
-  handleCancelSegmentEdit, 
-  handleDeleteSegment, 
+function DraggableSegment({
+  segment,
+  index,
+  editingSegment,
+  editSegment,
+  setEditSegment,
+  handleEditSegment,
+  handleSaveSegmentEdit,
+  handleCancelSegmentEdit,
+  handleDeleteSegment,
   event,
   openMenuId,
-  setOpenMenuId
+  setOpenMenuId,
 }: {
   segment: EventSegment;
   index: number;
@@ -83,11 +81,13 @@ function DraggableSegment({
             <input
               type="text"
               value={editSegment.title}
-              onChange={(e) => setEditSegment({ ...editSegment, title: e.target.value })}
+              onChange={(e) =>
+                setEditSegment({ ...editSegment, title: e.target.value })
+              }
               onKeyPress={(e) => {
-                if (e.key === 'Enter') {
+                if (e.key === "Enter") {
                   handleSaveSegmentEdit(segment.id);
-                } else if (e.key === 'Escape') {
+                } else if (e.key === "Escape") {
                   handleCancelSegmentEdit();
                 }
               }}
@@ -103,7 +103,9 @@ function DraggableSegment({
             </label>
             <textarea
               value={editSegment.description}
-              onChange={(e) => setEditSegment({ ...editSegment, description: e.target.value })}
+              onChange={(e) =>
+                setEditSegment({ ...editSegment, description: e.target.value })
+              }
               rows={3}
               className="w-full px-4 py-3 rounded-xl border border-dark-royalty/20 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 focus:border-transparent transition-all duration-300 resize-none"
               placeholder="Describe what will happen during this segment... (optional)"
@@ -121,14 +123,17 @@ function DraggableSegment({
                 onChange={(e) => {
                   const value = e.target.value;
                   // Allow empty string or valid numbers
-                  if (value === "" || (!isNaN(Number(value)) && Number(value) > 0)) {
+                  if (
+                    value === "" ||
+                    (!isNaN(Number(value)) && Number(value) > 0)
+                  ) {
                     setEditSegment({ ...editSegment, duration: value });
                   }
                 }}
                 onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === "Enter") {
                     handleSaveSegmentEdit(segment.id);
-                  } else if (e.key === 'Escape') {
+                  } else if (e.key === "Escape") {
                     handleCancelSegmentEdit();
                   }
                 }}
@@ -143,7 +148,12 @@ function DraggableSegment({
               </label>
               <select
                 value={editSegment.type}
-                onChange={(e) => setEditSegment({ ...editSegment, type: e.target.value as SegmentType })}
+                onChange={(e) =>
+                  setEditSegment({
+                    ...editSegment,
+                    type: e.target.value as SegmentType,
+                  })
+                }
                 className="w-full px-4 py-3 rounded-xl border border-dark-royalty/20 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 focus:border-transparent transition-all duration-300"
               >
                 <option value="welcome">Welcome</option>
@@ -163,7 +173,9 @@ function DraggableSegment({
               <PersonalFunfact
                 guests={event.guests}
                 funFacts={editSegment.personalFunFacts}
-                onFunFactsChange={(funFacts: Record<string, string>) => setEditSegment({ ...editSegment, personalFunFacts: funFacts })}
+                onFunFactsChange={(funFacts: Record<string, string>) =>
+                  setEditSegment({ ...editSegment, personalFunFacts: funFacts })
+                }
                 isEditable={true}
               />
             </div>
@@ -182,7 +194,12 @@ function DraggableSegment({
               </button>
               <button
                 onClick={() => handleSaveSegmentEdit(segment.id)}
-                disabled={!editSegment.title || !editSegment.duration || isNaN(Number(editSegment.duration)) || Number(editSegment.duration) <= 0}
+                disabled={
+                  !editSegment.title ||
+                  !editSegment.duration ||
+                  isNaN(Number(editSegment.duration)) ||
+                  Number(editSegment.duration) <= 0
+                }
                 className="px-6 py-3 bg-gradient-to-r from-dark-royalty to-deep-sea text-white rounded-xl hover:from-dark-royalty/90 hover:to-deep-sea/90 transition-all duration-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 flex items-center space-x-2"
               >
                 <span>💾</span>
@@ -196,33 +213,35 @@ function DraggableSegment({
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center space-x-4 flex-1 min-w-0">
               {/* Drag Handle */}
-              <div 
-                {...attributes} 
+              <div
+                {...attributes}
                 {...listeners}
                 className="cursor-grab active:cursor-grabbing p-2 text-deep-sea/60 hover:text-dark-royalty transition-colors rounded-lg hover:bg-deep-sea/10 flex-shrink-0"
                 title="Drag to reorder"
               >
                 <span className="text-lg font-bold">...</span>
               </div>
-              
+
               {/* Segment Number */}
               <div className="w-8 h-8 bg-gradient-to-br from-dark-royalty to-deep-sea text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
                 {index + 1}
               </div>
-              
+
               {/* Segment Content */}
               <div className="flex-1 min-w-0">
                 <div className="text-xl font-bold text-dark-royalty truncate">
                   {segment.title} - {segment.duration}min
                 </div>
-                {segment.description && segment.description !== "Guess who each fun fact belongs to!" && (
-                  <div className="text-deep-sea/70 mt-1 truncate">
-                    {segment.description}
-                  </div>
-                )}
+                {segment.description &&
+                  segment.description !==
+                    "Guess who each fun fact belongs to!" && (
+                    <div className="text-deep-sea/70 mt-1 truncate">
+                      {segment.description}
+                    </div>
+                  )}
               </div>
             </div>
-            
+
             {/* Action Menu */}
             <div className="relative opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0">
               <button
@@ -235,7 +254,7 @@ function DraggableSegment({
               >
                 <span className="text-lg font-bold">...</span>
               </button>
-              
+
               {/* Dropdown Menu */}
               {openMenuId === segment.id && (
                 <div className="absolute right-0 top-full mt-1 bg-white/95 backdrop-blur-xl rounded-xl border border-dark-royalty/20 shadow-lg z-10 min-w-[120px]">
@@ -339,36 +358,51 @@ const EventProgram: React.FC<EventProgramProps> = ({
   handleDeleteSegment,
   openMenuId,
   setOpenMenuId,
-  onAddSegment
+  onAddSegment,
 }) => {
   const [showAISegmentsModal, setShowAISegmentsModal] = useState(false);
   return (
     <div className="space-y-8 w-full max-w-none">
       <div className="flex justify-between items-center w-full">
         <div className="flex-1 min-w-0">
-          <h2 className="text-3xl font-bold text-dark-royalty">Event Program</h2>
-          <p className="text-deep-sea/70 mt-2">Your event canvas - view and edit details</p>
+          <h2 className="text-3xl font-bold text-dark-royalty">
+            Event Program
+          </h2>
+          <p className="text-deep-sea/70 mt-2">
+            Your event canvas - view and edit details
+          </p>
         </div>
-        <button 
+        <button
           onClick={() => setShowAddSegmentModal(true)}
           className="px-6 py-3 bg-dark-royalty text-white rounded-xl hover:bg-dark-royalty/90 transition-all duration-300 hover:scale-105 font-medium flex-shrink-0"
         >
           + Add Segment
         </button>
       </div>
-      
-      <div 
+
+      <div
         className="relative min-h-[600px] w-full bg-gradient-to-br from-deep-sea/10 via-white to-kimchi/10 rounded-3xl p-8 border-2 border-dashed border-dark-royalty/20 overflow-hidden"
         onClick={handleClickOutside}
       >
         <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-xl rounded-xl px-4 py-2 shadow-lg border border-dark-royalty/10">
-          <div className="text-sm font-bold text-dark-royalty">{formatDate(event.date)}</div>
+          <div className="text-sm font-bold text-dark-royalty">
+            {formatDate(event.date)}
+          </div>
         </div>
-        
-        <div className="absolute top-4 left-4 text-6xl opacity-10 animate-bounce">🎉</div>
-        <div className="absolute bottom-8 left-8 text-4xl opacity-10 animate-pulse">✨</div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-8xl opacity-5 animate-spin" style={{animationDuration: '20s'}}>🎊</div>
-        
+
+        <div className="absolute top-4 left-4 text-6xl opacity-10 animate-bounce">
+          🎉
+        </div>
+        <div className="absolute bottom-8 left-8 text-4xl opacity-10 animate-pulse">
+          ✨
+        </div>
+        <div
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-8xl opacity-5 animate-spin"
+          style={{ animationDuration: "20s" }}
+        >
+          🎊
+        </div>
+
         <div className="relative text-center mb-12">
           <div className="inline-block bg-white/90 backdrop-blur-xl rounded-2xl px-8 py-6 shadow-lg border border-dark-royalty/10">
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-dark-royalty to-deep-sea bg-clip-text text-transparent">
@@ -383,8 +417,12 @@ const EventProgram: React.FC<EventProgramProps> = ({
               <div className="flex items-center space-x-4 flex-1 min-w-0">
                 <div className="text-4xl animate-pulse flex-shrink-0">🎭</div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold text-dark-royalty mb-1 truncate">Event Tone</h3>
-                  <p className="text-deep-sea/70 font-medium truncate">{getToneLabel(event.tone)}</p>
+                  <h3 className="text-lg font-bold text-dark-royalty mb-1 truncate">
+                    Event Tone
+                  </h3>
+                  <p className="text-deep-sea/70 font-medium truncate">
+                    {getToneLabel(event.tone)}
+                  </p>
                 </div>
               </div>
               <div className="px-4 py-2 bg-gradient-to-r from-dark-royalty to-deep-sea text-white rounded-full text-sm font-bold shadow-lg flex-shrink-0">
@@ -396,10 +434,16 @@ const EventProgram: React.FC<EventProgramProps> = ({
           <div className="group bg-white/90 backdrop-blur-xl rounded-2xl p-6 border-2 border-dark-royalty/10 hover:border-dark-royalty/30 transition-all duration-300 hover:shadow-xl hover:scale-105 cursor-pointer w-full">
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center space-x-4 flex-1 min-w-0">
-                <div className="text-4xl animate-bounce flex-shrink-0">{getEventTypeIcon(event.type)}</div>
+                <div className="text-4xl animate-bounce flex-shrink-0">
+                  {getEventTypeIcon(event.type)}
+                </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold text-dark-royalty mb-1 truncate">Event Type</h3>
-                  <p className="text-deep-sea/70 font-medium truncate">{getEventTypeLabel(event.type)}</p>
+                  <h3 className="text-lg font-bold text-dark-royalty mb-1 truncate">
+                    Event Type
+                  </h3>
+                  <p className="text-deep-sea/70 font-medium truncate">
+                    {getEventTypeLabel(event.type)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -414,9 +458,9 @@ const EventProgram: React.FC<EventProgramProps> = ({
                 value={editKickoffTime}
                 onChange={(e) => setEditKickoffTime(e.target.value)}
                 onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === "Enter") {
                     handleSaveKickoff();
-                  } else if (e.key === 'Escape') {
+                  } else if (e.key === "Escape") {
                     handleCancelKickoff();
                   }
                 }}
@@ -439,7 +483,7 @@ const EventProgram: React.FC<EventProgramProps> = ({
               </div>
             </div>
           ) : (
-            <div 
+            <div
               className="text-2xl font-bold text-dark-royalty cursor-pointer hover:text-deep-sea transition-colors"
               onClick={handleEditKickoff}
               title="Click to edit kickoff time"
@@ -455,7 +499,7 @@ const EventProgram: React.FC<EventProgramProps> = ({
           onDragEnd={handleDragEnd}
         >
           <SortableContext
-            items={event.timeline.map(segment => segment.id)}
+            items={event.timeline.map((segment) => segment.id)}
             strategy={verticalListSortingStrategy}
           >
             {event.timeline.map((segment, index) => (
@@ -480,13 +524,13 @@ const EventProgram: React.FC<EventProgramProps> = ({
 
         <div className="mb-8 space-y-4 w-full">
           <div className="flex flex-wrap gap-4 w-full">
-            <button 
+            <button
               onClick={() => setShowAddSegmentModal(true)}
               className="px-6 py-3 bg-dark-royalty text-white rounded-xl hover:bg-dark-royalty/90 transition-all duration-300 font-medium flex-shrink-0"
             >
               + Add Segment
             </button>
-            <button 
+            <button
               onClick={() => setShowAISegmentsModal(true)}
               className="px-6 py-3 bg-gradient-to-r from-kimchi/80 to-deep-sea/80 text-white rounded-xl hover:from-kimchi/90 hover:to-deep-sea/90 transition-all duration-300 font-medium flex items-center space-x-2 flex-shrink-0"
             >
@@ -498,8 +542,14 @@ const EventProgram: React.FC<EventProgramProps> = ({
 
         <div className="absolute bottom-4 right-4 flex space-x-2">
           <div className="w-3 h-3 bg-deep-sea/30 rounded-full animate-pulse"></div>
-          <div className="w-3 h-3 bg-kimchi/30 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
-          <div className="w-3 h-3 bg-dark-royalty/30 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+          <div
+            className="w-3 h-3 bg-kimchi/30 rounded-full animate-pulse"
+            style={{ animationDelay: "0.5s" }}
+          ></div>
+          <div
+            className="w-3 h-3 bg-dark-royalty/30 rounded-full animate-pulse"
+            style={{ animationDelay: "1s" }}
+          ></div>
         </div>
       </div>
 
@@ -514,4 +564,4 @@ const EventProgram: React.FC<EventProgramProps> = ({
   );
 };
 
-export default EventProgram; 
+export default EventProgram;

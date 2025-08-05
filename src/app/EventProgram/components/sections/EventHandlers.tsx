@@ -11,25 +11,32 @@ interface EventHandlersProps {
   setEvent: (event: Event | null) => void;
 }
 
-export function useEventHandlers({ user, event, setEvent }: EventHandlersProps) {
+export function useEventHandlers({
+  user,
+  event,
+  setEvent,
+}: EventHandlersProps) {
   const [showAddGuestModal, setShowAddGuestModal] = useState(false);
   const [editingKickoff, setEditingKickoff] = useState(false);
   const [editKickoffTime, setEditKickoffTime] = useState("");
   const [showAddSegmentModal, setShowAddSegmentModal] = useState(false);
-  const [showPersonalFunfactModal, setShowPersonalFunfactModal] = useState(false);
-  
+  const [showPersonalFunfactModal, setShowPersonalFunfactModal] =
+    useState(false);
+
   // Specialized modal states for editing
-  const [showPersonalFunfactEditModal, setShowPersonalFunfactEditModal] = useState(false);
-  const [showSpinTheWheelEditModal, setShowSpinTheWheelEditModal] = useState(false);
+  const [showPersonalFunfactEditModal, setShowPersonalFunfactEditModal] =
+    useState(false);
+  const [showSpinTheWheelEditModal, setShowSpinTheWheelEditModal] =
+    useState(false);
   const [showSlideShowEditModal, setShowSlideShowEditModal] = useState(false);
   const [showJeopardyEditModal, setShowJeopardyEditModal] = useState(false);
-  
+
   const [newSegment, setNewSegment] = useState({
     title: "",
     description: "",
     duration: "",
     type: "activity" as SegmentType,
-    personalFunFacts: {} as Record<string, string>
+    personalFunFacts: {} as Record<string, string>,
   });
   const [editingSegment, setEditingSegment] = useState<string | null>(null);
   const [segmentToEdit, setSegmentToEdit] = useState<EventSegment | null>(null);
@@ -44,7 +51,7 @@ export function useEventHandlers({ user, event, setEvent }: EventHandlersProps) 
     description: "",
     duration: "",
     type: "activity",
-    personalFunFacts: {}
+    personalFunFacts: {},
   });
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
@@ -52,7 +59,10 @@ export function useEventHandlers({ user, event, setEvent }: EventHandlersProps) 
     if (!user) return;
 
     try {
-      await eventService.updateEvent(updatedEvent.id, cleanUndefinedValues(updatedEvent));
+      await eventService.updateEvent(
+        updatedEvent.id,
+        cleanUndefinedValues(updatedEvent),
+      );
       setEvent(updatedEvent);
       console.log("Event updated successfully (Firestore mode)");
     } catch (error) {
@@ -70,11 +80,11 @@ export function useEventHandlers({ user, event, setEvent }: EventHandlersProps) 
     if (editKickoffTime && event) {
       const updatedEvent: Event = {
         ...event,
-        startTime: editKickoffTime
+        startTime: editKickoffTime,
       };
-      
+
       handleEventUpdate(updatedEvent);
-      
+
       setEditingKickoff(false);
       setEditKickoffTime("");
     }
@@ -86,24 +96,36 @@ export function useEventHandlers({ user, event, setEvent }: EventHandlersProps) 
   };
 
   const handleAddSegment = () => {
-    if (!event || !newSegment.title || !newSegment.duration || isNaN(Number(newSegment.duration)) || Number(newSegment.duration) <= 0) {
+    if (
+      !event ||
+      !newSegment.title ||
+      !newSegment.duration ||
+      isNaN(Number(newSegment.duration)) ||
+      Number(newSegment.duration) <= 0
+    ) {
       return;
     }
 
-    const isPersonalFunFactsSegment = newSegment.title.toLowerCase().includes('personal fun fact') || 
-                                     newSegment.title.toLowerCase().includes('fun fact');
-    
+    const isPersonalFunFactsSegment =
+      newSegment.title.toLowerCase().includes("personal fun fact") ||
+      newSegment.title.toLowerCase().includes("fun fact");
+
     const segmentsToAdd: EventSegment[] = [];
-    
-    if (isPersonalFunFactsSegment && Object.keys(newSegment.personalFunFacts).length > 0) {
-      const validFunFacts = Object.entries(newSegment.personalFunFacts).filter(([guestId, funFact]) => {
-        const guest = event.guests.find(g => g.id === guestId);
-        return guest && funFact && funFact.trim() !== "";
-      });
-      
+
+    if (
+      isPersonalFunFactsSegment &&
+      Object.keys(newSegment.personalFunFacts).length > 0
+    ) {
+      const validFunFacts = Object.entries(newSegment.personalFunFacts).filter(
+        ([guestId, funFact]) => {
+          const guest = event.guests.find((g) => g.id === guestId);
+          return guest && funFact && funFact.trim() !== "";
+        },
+      );
+
       if (validFunFacts.length > 0) {
         const totalDuration = validFunFacts.length * 2;
-        
+
         const segment: EventSegment = {
           id: Date.now().toString(),
           type: "game" as SegmentType,
@@ -113,7 +135,7 @@ export function useEventHandlers({ user, event, setEvent }: EventHandlersProps) 
           content: `Each fun fact will be shown individually. Give guests time to discuss and guess before revealing each answer.`,
           order: event.timeline.length + 1,
           isCustom: true,
-          personalFunFacts: newSegment.personalFunFacts
+          personalFunFacts: newSegment.personalFunFacts,
         };
         segmentsToAdd.push(segment);
       }
@@ -127,61 +149,71 @@ export function useEventHandlers({ user, event, setEvent }: EventHandlersProps) 
         content: "",
         order: event.timeline.length + 1,
         isCustom: true,
-        ...(Object.keys(newSegment.personalFunFacts).length > 0 && { personalFunFacts: newSegment.personalFunFacts })
+        ...(Object.keys(newSegment.personalFunFacts).length > 0 && {
+          personalFunFacts: newSegment.personalFunFacts,
+        }),
       };
       segmentsToAdd.push(segment);
     }
-    
+
     const updatedEvent: Event = {
       ...event,
-      timeline: [...event.timeline, ...segmentsToAdd]
+      timeline: [...event.timeline, ...segmentsToAdd],
     };
-    
+
     handleEventUpdate(updatedEvent);
-    
+
     setNewSegment({
       title: "",
       description: "",
       duration: "",
       type: "activity",
-      personalFunFacts: {}
+      personalFunFacts: {},
     });
-    
+
     setShowAddSegmentModal(false);
     setSegmentToEdit(null);
   };
 
   const handleSaveSegmentEdit = (segmentId: string) => {
-    if (!event || !newSegment.title || !newSegment.duration || isNaN(Number(newSegment.duration)) || Number(newSegment.duration) <= 0) {
+    if (
+      !event ||
+      !newSegment.title ||
+      !newSegment.duration ||
+      isNaN(Number(newSegment.duration)) ||
+      Number(newSegment.duration) <= 0
+    ) {
       return;
     }
 
     const updatedEvent: Event = {
       ...event,
-      timeline: event.timeline.map(segment => 
-        segment.id === segmentId 
-          ? { 
-              ...segment, 
+      timeline: event.timeline.map((segment) =>
+        segment.id === segmentId
+          ? {
+              ...segment,
               title: newSegment.title,
               description: newSegment.description || "",
               duration: Number(newSegment.duration),
               type: newSegment.type,
-              ...(Object.keys(newSegment.personalFunFacts).length > 0 && { personalFunFacts: newSegment.personalFunFacts })
+              ...(Object.keys(newSegment.personalFunFacts).length > 0 && {
+                personalFunFacts: newSegment.personalFunFacts,
+              }),
             }
-          : segment
-      )
+          : segment,
+      ),
     };
-    
+
     handleEventUpdate(updatedEvent);
-    
+
     setNewSegment({
       title: "",
       description: "",
       duration: "",
       type: "activity",
-      personalFunFacts: {}
+      personalFunFacts: {},
     });
-    
+
     setShowAddSegmentModal(false);
     setSegmentToEdit(null);
   };
@@ -190,49 +222,49 @@ export function useEventHandlers({ user, event, setEvent }: EventHandlersProps) 
     if (!event) {
       return;
     }
-    const segment = event.timeline.find(s => s.id === segmentId);
+    const segment = event.timeline.find((s) => s.id === segmentId);
     if (segment) {
       setSegmentToEdit(segment);
-      
+
       // Determine which modal to open based on segment type/title
-      if (segment.title === 'Personal Fun Facts') {
+      if (segment.title === "Personal Fun Facts") {
         // Open PersonalFunfact modal with existing data
         setNewSegment({
           title: segment.title,
           description: segment.description,
           duration: segment.duration.toString(),
           type: segment.type,
-          personalFunFacts: segment.personalFunFacts || {}
+          personalFunFacts: segment.personalFunFacts || {},
         });
         setShowPersonalFunfactEditModal(true);
-      } else if (segment.title === 'Spin The Wheel') {
+      } else if (segment.title === "Spin The Wheel") {
         // Open SpinTheWheel modal with existing data
         setNewSegment({
           title: segment.title,
           description: segment.description,
           duration: segment.duration.toString(),
           type: segment.type,
-          personalFunFacts: segment.personalFunFacts || {}
+          personalFunFacts: segment.personalFunFacts || {},
         });
         setShowSpinTheWheelEditModal(true);
-      } else if (segment.title === 'Slide Show') {
+      } else if (segment.title === "Slide Show") {
         // Open SlideShow modal with existing data
         setNewSegment({
           title: segment.title,
           description: segment.description,
           duration: segment.duration.toString(),
           type: segment.type,
-          personalFunFacts: segment.personalFunFacts || {}
+          personalFunFacts: segment.personalFunFacts || {},
         });
         setShowSlideShowEditModal(true);
-      } else if (segment.title === 'Jeopardy') {
+      } else if (segment.title === "Jeopardy") {
         // Open Jeopardy modal with existing data
         setNewSegment({
           title: segment.title,
           description: segment.description,
           duration: segment.duration.toString(),
           type: segment.type,
-          personalFunFacts: segment.personalFunFacts || {}
+          personalFunFacts: segment.personalFunFacts || {},
         });
         setShowJeopardyEditModal(true);
       } else {
@@ -242,7 +274,7 @@ export function useEventHandlers({ user, event, setEvent }: EventHandlersProps) 
           description: segment.description,
           duration: segment.duration.toString(),
           type: segment.type,
-          personalFunFacts: segment.personalFunFacts || {}
+          personalFunFacts: segment.personalFunFacts || {},
         });
         setShowAddSegmentModal(true);
       }
@@ -256,7 +288,7 @@ export function useEventHandlers({ user, event, setEvent }: EventHandlersProps) 
       description: "",
       duration: "",
       type: "activity",
-      personalFunFacts: {}
+      personalFunFacts: {},
     });
   };
 
@@ -265,9 +297,9 @@ export function useEventHandlers({ user, event, setEvent }: EventHandlersProps) 
   };
 
   const handleSavePersonalFunfacts = (funFacts: Record<string, string>) => {
-    setNewSegment(prev => ({
+    setNewSegment((prev) => ({
       ...prev,
-      personalFunFacts: funFacts
+      personalFunFacts: funFacts,
     }));
     setShowPersonalFunfactModal(false);
   };
@@ -275,20 +307,20 @@ export function useEventHandlers({ user, event, setEvent }: EventHandlersProps) 
   // Save handlers for specialized modals when editing
   const handleSavePersonalFunfactsEdit = (funFacts: Record<string, string>) => {
     if (!event || !segmentToEdit) return;
-    
+
     const updatedEvent: Event = {
       ...event,
-      timeline: event.timeline.map(segment => 
-        segment.id === segmentToEdit.id 
-          ? { 
-              ...segment, 
+      timeline: event.timeline.map((segment) =>
+        segment.id === segmentToEdit.id
+          ? {
+              ...segment,
               personalFunFacts: funFacts,
-              duration: Object.keys(funFacts).length * 2 // Update duration based on number of facts
+              duration: Object.keys(funFacts).length * 2, // Update duration based on number of facts
             }
-          : segment
-      )
+          : segment,
+      ),
     };
-    
+
     handleEventUpdate(updatedEvent);
     setShowPersonalFunfactEditModal(false);
     setSegmentToEdit(null);
@@ -296,20 +328,20 @@ export function useEventHandlers({ user, event, setEvent }: EventHandlersProps) 
 
   const handleSaveSpinTheWheelEdit = (challenge: string) => {
     if (!event || !segmentToEdit) return;
-    
+
     const updatedEvent: Event = {
       ...event,
-      timeline: event.timeline.map(segment => 
-        segment.id === segmentToEdit.id 
-          ? { 
-              ...segment, 
+      timeline: event.timeline.map((segment) =>
+        segment.id === segmentToEdit.id
+          ? {
+              ...segment,
               description: challenge,
-              content: `Challenge: ${challenge}`
+              content: `Challenge: ${challenge}`,
             }
-          : segment
-      )
+          : segment,
+      ),
     };
-    
+
     handleEventUpdate(updatedEvent);
     setShowSpinTheWheelEditModal(false);
     setSegmentToEdit(null);
@@ -317,20 +349,20 @@ export function useEventHandlers({ user, event, setEvent }: EventHandlersProps) 
 
   const handleSaveSlideShowEdit = (updatedSegment: EventSegment) => {
     if (!event || !segmentToEdit) return;
-    
+
     const updatedEvent: Event = {
       ...event,
-      timeline: event.timeline.map(segment => 
-        segment.id === segmentToEdit.id 
-          ? { 
-              ...segment, 
+      timeline: event.timeline.map((segment) =>
+        segment.id === segmentToEdit.id
+          ? {
+              ...segment,
               ...updatedSegment,
-              id: segmentToEdit.id // Keep the original ID
+              id: segmentToEdit.id, // Keep the original ID
             }
-          : segment
-      )
+          : segment,
+      ),
     };
-    
+
     handleEventUpdate(updatedEvent);
     setShowSlideShowEditModal(false);
     setSegmentToEdit(null);
@@ -338,20 +370,20 @@ export function useEventHandlers({ user, event, setEvent }: EventHandlersProps) 
 
   const handleSaveJeopardyEdit = (updatedSegment: EventSegment) => {
     if (!event || !segmentToEdit) return;
-    
+
     const updatedEvent: Event = {
       ...event,
-      timeline: event.timeline.map(segment => 
-        segment.id === segmentToEdit.id 
-          ? { 
-              ...segment, 
+      timeline: event.timeline.map((segment) =>
+        segment.id === segmentToEdit.id
+          ? {
+              ...segment,
               ...updatedSegment,
-              id: segmentToEdit.id // Keep the original ID
+              id: segmentToEdit.id, // Keep the original ID
             }
-          : segment
-      )
+          : segment,
+      ),
     };
-    
+
     handleEventUpdate(updatedEvent);
     setShowJeopardyEditModal(false);
     setSegmentToEdit(null);
@@ -361,7 +393,7 @@ export function useEventHandlers({ user, event, setEvent }: EventHandlersProps) 
     if (!event) return;
     const updatedEvent: Event = {
       ...event,
-      timeline: [...event.timeline, segment]
+      timeline: [...event.timeline, segment],
     };
     handleEventUpdate(updatedEvent);
   };
@@ -370,7 +402,7 @@ export function useEventHandlers({ user, event, setEvent }: EventHandlersProps) 
     if (!event) return;
     const updatedEvent: Event = {
       ...event,
-      timeline: event.timeline.filter(segment => segment.id !== segmentId)
+      timeline: event.timeline.filter((segment) => segment.id !== segmentId),
     };
     handleEventUpdate(updatedEvent);
   };
@@ -409,7 +441,7 @@ export function useEventHandlers({ user, event, setEvent }: EventHandlersProps) 
     setEditSegment,
     openMenuId,
     setOpenMenuId,
-    
+
     // Handlers
     handleEventUpdate,
     handleEditKickoff,
@@ -429,4 +461,4 @@ export function useEventHandlers({ user, event, setEvent }: EventHandlersProps) 
     handleDeleteSegment,
     handleClickOutside,
   };
-} 
+}

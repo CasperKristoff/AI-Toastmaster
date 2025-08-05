@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
 import app from "../constants/firebaseConfig";
 
 interface LoginFormProps {
@@ -25,21 +30,34 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
     const auth = getAuth(app);
     try {
       if (isSignupMode) {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password,
+        );
         // Update the user's display name with the full name
         if (fullName.trim()) {
           await updateProfile(userCredential.user, {
-            displayName: fullName.trim()
+            displayName: fullName.trim(),
           });
         }
         setSuccess("Signup successful! You can now log in.");
         if (onLoginSuccess) onLoginSuccess(userCredential.user);
       } else {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password,
+        );
         if (onLoginSuccess) onLoginSuccess(userCredential.user);
       }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : (isSignupMode ? "Signup failed" : "Login failed");
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : isSignupMode
+            ? "Signup failed"
+            : "Login failed";
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -68,10 +86,12 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
               {/* Header section */}
               <div className="space-y-4">
                 <h1 className="text-4xl sm:text-5xl font-poppins font-bold bg-gradient-to-r from-dark-royalty to-deep-sea bg-clip-text text-transparent pb-1">
-                  {isSignupMode ? 'Create Account' : 'Welcome Back'}
+                  {isSignupMode ? "Create Account" : "Welcome Back"}
                 </h1>
                 <p className="text-lg text-deep-sea/80 font-poppins">
-                  {isSignupMode ? 'Sign up to access AI Toastmaster' : 'Sign in to access AI Toastmaster'}
+                  {isSignupMode
+                    ? "Sign up to access AI Toastmaster"
+                    : "Sign in to access AI Toastmaster"}
                 </p>
               </div>
               {/* Login form */}
@@ -79,7 +99,10 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                 <div className="space-y-4">
                   {isSignupMode && (
                     <div>
-                      <label htmlFor="fullName" className="block text-sm font-medium text-deep-sea mb-2">
+                      <label
+                        htmlFor="fullName"
+                        className="block text-sm font-medium text-deep-sea mb-2"
+                      >
                         Full Name
                       </label>
                       <input
@@ -94,7 +117,10 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                     </div>
                   )}
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-deep-sea mb-2">
+                    <label
+                      htmlFor="email"
+                      className="block text-sm font-medium text-deep-sea mb-2"
+                    >
                       Email Address
                     </label>
                     <input
@@ -108,7 +134,10 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                     />
                   </div>
                   <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-deep-sea mb-2">
+                    <label
+                      htmlFor="password"
+                      className="block text-sm font-medium text-deep-sea mb-2"
+                    >
                       Password
                     </label>
                     <input
@@ -138,21 +167,29 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                   className="w-full group relative bg-gradient-to-r from-dark-royalty/100 to-dark-royalty/75 text-white px-8 py-4 rounded-xl font-poppins text-lg font-medium tracking-wide shadow-lg shadow-deep-sea/20 hover:shadow-md hover:shadow-deep-sea/25 transition-all duration-300 ease-out hover:-translate-y-[1px] disabled:opacity-70 disabled:hover:translate-y-0"
                 >
                   <span className="relative z-10">
-                    {isLoading ? (isSignupMode ? 'Signing Up...' : 'Signing In...') : (isSignupMode ? 'Sign Up' : 'Sign In')}
+                    {isLoading
+                      ? isSignupMode
+                        ? "Signing Up..."
+                        : "Signing In..."
+                      : isSignupMode
+                        ? "Sign Up"
+                        : "Sign In"}
                   </span>
                   <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-dark-royalty/80 to-dark-royalty opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out"></div>
                 </button>
               </form>
-              
+
               {/* Toggle between login and signup */}
               <div className="text-center">
                 <p className="text-deep-sea/70 text-sm">
-                  {isSignupMode ? 'Already have an account?' : "Don't have an account?"}
+                  {isSignupMode
+                    ? "Already have an account?"
+                    : "Don't have an account?"}
                   <button
                     onClick={toggleMode}
                     className="ml-2 text-dark-royalty hover:text-deep-sea font-medium transition-colors duration-300"
                   >
-                    {isSignupMode ? 'Sign In' : 'Sign Up'}
+                    {isSignupMode ? "Sign In" : "Sign Up"}
                   </button>
                 </p>
               </div>
@@ -162,4 +199,4 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
       </div>
     </div>
   );
-} 
+}

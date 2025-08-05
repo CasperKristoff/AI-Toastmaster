@@ -12,7 +12,7 @@ export default function LoginPage() {
   // Redirect if user is already logged in
   useEffect(() => {
     if (user && !loading) {
-      router.push('/ProfilePage');
+      router.push("/ProfilePage");
     }
   }, [user, loading, router]);
 
@@ -31,7 +31,7 @@ export default function LoginPage() {
   }
 
   const handleLoginSuccess = () => {
-    router.push('/ProfilePage');
+    router.push("/ProfilePage");
   };
 
   return (
@@ -39,4 +39,4 @@ export default function LoginPage() {
       <LoginForm onLoginSuccess={handleLoginSuccess} />
     </div>
   );
-} 
+}
