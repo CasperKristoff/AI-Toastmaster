@@ -2,16 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
+import { pollService, PollData } from "../../../services/pollService";
 
-interface PollData {
-  question: string;
-  options: string[];
-  showResultsLive: boolean;
-  allowMultipleSelections: boolean;
-  sessionCode: string;
-  votes: Record<string, number>;
-  totalVotes: number;
-}
+// PollData interface is now imported from pollService
 
 const PollVotingPage: React.FC = () => {
   const params = useParams();
@@ -30,30 +23,36 @@ const PollVotingPage: React.FC = () => {
       return;
     }
 
-    // Find the poll with this session code
-    const findPoll = async () => {
+    // Get poll data and subscribe to updates
+    const loadPoll = async () => {
       try {
-        // For now, we'll simulate finding the poll
-        // In a real implementation, you'd query for events with poll segments containing this session code
-        const mockPollData: PollData = {
-          question: "Who should take a shot?",
-          options: ["Option 1", "Option 2", "Option 3"],
-          showResultsLive: true,
-          allowMultipleSelections: false,
-          sessionCode: sessionCode,
-          votes: { "Option 1": 5, "Option 2": 3, "Option 3": 2 },
-          totalVotes: 10,
-        };
+        // Get initial poll data
+        const initialPollData = await pollService.getPoll(sessionCode);
+        if (!initialPollData) {
+          setError("Poll not found");
+          setIsLoading(false);
+          return;
+        }
 
-        setPollData(mockPollData);
+        setPollData(initialPollData);
         setIsLoading(false);
-      } catch {
+
+        // Subscribe to real-time updates
+        const unsubscribe = pollService.subscribeToPoll(sessionCode, (updatedPoll) => {
+          setPollData(updatedPoll);
+        });
+
+        return unsubscribe;
+      } catch (error) {
         setError("Failed to load poll");
         setIsLoading(false);
       }
     };
 
-    findPoll();
+    const unsubscribe = loadPoll();
+    return () => {
+      unsubscribe?.then(unsub => unsub?.());
+    };
   }, [sessionCode]);
 
   const handleOptionToggle = (option: string) => {
@@ -80,15 +79,10 @@ const PollVotingPage: React.FC = () => {
         newVotes[option] = (newVotes[option] || 0) + 1;
       });
 
-      const updatedPollData = {
-        ...pollData,
-        votes: newVotes,
-        totalVotes: pollData.totalVotes + selectedOptions.length,
-      };
+      const newTotalVotes = pollData.totalVotes + selectedOptions.length;
 
-      // In a real implementation, you'd update the specific poll in Firestore
-      // For now, we'll just update the local state
-      setPollData(updatedPollData);
+      // Update votes in Firestore
+      await pollService.updateVotes(sessionCode, newVotes, newTotalVotes);
       setHasVoted(true);
     } catch {
       setError("Failed to submit vote");
@@ -175,53 +169,12 @@ const PollVotingPage: React.FC = () => {
               </button>
             </div>
           ) : (
-            /* Results Display */
-            <div className="space-y-4">
-              {pollData.options.map((option, index) => {
-                const votes = pollData.votes[option] || 0;
-                const percentage = getOptionPercentage(option);
-                const colors = [
-                  "#3B82F6",
-                  "#EF4444",
-                  "#10B981",
-                  "#F59E0B",
-                  "#8B5CF6",
-                ];
-
-                return (
-                  <div key={index} className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-dark-royalty">
-                        {option}
-                      </span>
-                      <span className="text-lg font-bold text-dark-royalty">
-                        {votes}
-                      </span>
-                    </div>
-                    <div className="relative h-6 bg-gray-200 rounded-lg overflow-hidden">
-                      <div
-                        className="h-full transition-all duration-500 ease-out"
-                        style={{
-                          width: `${percentage}%`,
-                          backgroundColor: colors[index % colors.length],
-                        }}
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-xs font-medium text-white">
-                          {percentage}%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-
-              <div className="text-center mt-6 pt-4 border-t border-dark-royalty/20">
-                <div className="text-sm text-deep-sea/60">Total Votes</div>
-                <div className="text-xl font-bold text-dark-royalty">
-                  {pollData.totalVotes}
-                </div>
-              </div>
+            /* Thank You Message */
+            <div className="text-center py-8">
+              <div className="text-4xl mb-4">✨</div>
+              <h2 className="text-2xl font-bold text-dark-royalty mb-2">
+                Thank you for your answer!
+              </h2>
             </div>
           )}
         </div>

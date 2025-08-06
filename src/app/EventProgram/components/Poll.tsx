@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Event, EventSegment } from "../../../types/event";
 import { QRCodeSVG } from "qrcode.react";
+import { pollService } from "../../../services/pollService";
 
 interface PollProps {
   segment: EventSegment;
@@ -38,6 +39,21 @@ const Poll: React.FC<PollProps> = ({
     votes: (segment.data?.votes as Record<string, number>) || {},
     totalVotes: (segment.data?.totalVotes as number) || 0,
   });
+
+  // Subscribe to real-time poll updates in presentation mode
+  useEffect(() => {
+    if (!isEditMode) {
+      // Save initial poll data to Firestore if it doesn't exist
+      pollService.setPoll(pollData.sessionCode, pollData);
+
+      // Subscribe to real-time updates
+      const unsubscribe = pollService.subscribeToPoll(pollData.sessionCode, (updatedPoll) => {
+        setPollData(updatedPoll);
+      });
+
+      return () => unsubscribe();
+    }
+  }, [isEditMode, pollData.sessionCode]);
 
   // Generate unique session code
   function generateSessionCode(): string {
