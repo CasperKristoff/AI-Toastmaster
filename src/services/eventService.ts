@@ -115,9 +115,7 @@ export const eventService: EventService = {
       });
 
       // Sort in JavaScript instead of Firestore
-      return events.sort(
-        (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-      );
+      return events.sort((a, b) => a.date.getTime() - b.date.getTime());
     } catch (error) {
       console.error("Error getting user events:", error);
       throw new Error("Failed to get user events");
@@ -152,7 +150,7 @@ export const eventService: EventService = {
 
         // Sort in JavaScript instead of Firestore
         const sortedEvents = events.sort(
-          (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+          (a, b) => a.date.getTime() - b.date.getTime(),
         );
         callback(sortedEvents);
       },
