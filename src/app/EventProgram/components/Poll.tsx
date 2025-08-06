@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Event, EventSegment } from "../../../types/event";
 import { QRCodeSVG } from "qrcode.react";
 import { pollService } from "../../../services/pollService";
@@ -40,15 +40,22 @@ const Poll: React.FC<PollProps> = ({
     totalVotes: (segment.data?.totalVotes as number) || 0,
   });
 
-  // Subscribe to real-time poll updates in presentation mode
+  // Store initial poll data in a ref
+  const initialPollDataRef = useRef(pollData);
+
+  // Save initial poll data to Firestore
   useEffect(() => {
     if (!isEditMode) {
-      // Save initial poll data to Firestore if it doesn't exist
-      const savePoll = async () => {
-        await pollService.setPoll(pollData.sessionCode, pollData);
-      };
-      savePoll();
+      pollService.setPoll(
+        initialPollDataRef.current.sessionCode,
+        initialPollDataRef.current,
+      );
+    }
+  }, [isEditMode]); // Run only once when component mounts in presentation mode
 
+  // Subscribe to real-time poll updates in presentation mode
+  useEffect(() => {
+    if (!isEditMode && pollData.sessionCode) {
       // Subscribe to real-time updates
       const unsubscribe = pollService.subscribeToPoll(
         pollData.sessionCode,
@@ -59,7 +66,7 @@ const Poll: React.FC<PollProps> = ({
 
       return () => unsubscribe();
     }
-  }, [isEditMode, pollData]);
+  }, [isEditMode, pollData.sessionCode]); // Only re-run if session code changes
 
   // Generate unique session code
   function generateSessionCode(): string {
