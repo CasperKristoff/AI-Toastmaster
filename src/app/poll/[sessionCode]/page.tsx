@@ -38,12 +38,15 @@ const PollVotingPage: React.FC = () => {
         setIsLoading(false);
 
         // Subscribe to real-time updates
-        const unsubscribe = pollService.subscribeToPoll(sessionCode, (updatedPoll) => {
-          setPollData(updatedPoll);
-        });
+        const unsubscribe = pollService.subscribeToPoll(
+          sessionCode,
+          (updatedPoll) => {
+            setPollData(updatedPoll);
+          },
+        );
 
         return unsubscribe;
-      } catch (error) {
+      } catch {
         setError("Failed to load poll");
         setIsLoading(false);
       }
@@ -51,7 +54,7 @@ const PollVotingPage: React.FC = () => {
 
     const unsubscribe = loadPoll();
     return () => {
-      unsubscribe?.then(unsub => unsub?.());
+      unsubscribe?.then((unsub) => unsub?.());
     };
   }, [sessionCode]);
 
@@ -89,12 +92,7 @@ const PollVotingPage: React.FC = () => {
     }
   };
 
-  const getOptionPercentage = (option: string): number => {
-    if (!pollData || pollData.totalVotes === 0) return 0;
-    return Math.round(
-      ((pollData.votes[option] || 0) / pollData.totalVotes) * 100,
-    );
-  };
+  // Removed unused getOptionPercentage function
 
   if (isLoading) {
     return (

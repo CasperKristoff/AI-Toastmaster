@@ -1,11 +1,4 @@
-import {
-  collection,
-  doc,
-  updateDoc,
-  getDoc,
-  onSnapshot,
-  setDoc,
-} from "firebase/firestore";
+import { doc, updateDoc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "../constants/firebaseConfig";
 
 const POLLS_COLLECTION = "polls";
@@ -50,7 +43,11 @@ export const pollService = {
   },
 
   // Update votes for a poll
-  async updateVotes(sessionCode: string, newVotes: Record<string, number>, totalVotes: number): Promise<void> {
+  async updateVotes(
+    sessionCode: string,
+    newVotes: Record<string, number>,
+    totalVotes: number,
+  ): Promise<void> {
     try {
       const pollRef = doc(db, POLLS_COLLECTION, sessionCode);
       await updateDoc(pollRef, {
@@ -64,7 +61,10 @@ export const pollService = {
   },
 
   // Subscribe to real-time updates for a poll
-  subscribeToPoll(sessionCode: string, callback: (poll: PollData) => void): () => void {
+  subscribeToPoll(
+    sessionCode: string,
+    callback: (poll: PollData) => void,
+  ): () => void {
     const pollRef = doc(db, POLLS_COLLECTION, sessionCode);
 
     const unsubscribe = onSnapshot(
@@ -76,7 +76,7 @@ export const pollService = {
       },
       (error) => {
         console.error("Error subscribing to poll:", error);
-      }
+      },
     );
 
     return unsubscribe;

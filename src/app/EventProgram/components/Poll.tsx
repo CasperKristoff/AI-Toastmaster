@@ -44,16 +44,22 @@ const Poll: React.FC<PollProps> = ({
   useEffect(() => {
     if (!isEditMode) {
       // Save initial poll data to Firestore if it doesn't exist
-      pollService.setPoll(pollData.sessionCode, pollData);
+      const savePoll = async () => {
+        await pollService.setPoll(pollData.sessionCode, pollData);
+      };
+      savePoll();
 
       // Subscribe to real-time updates
-      const unsubscribe = pollService.subscribeToPoll(pollData.sessionCode, (updatedPoll) => {
-        setPollData(updatedPoll);
-      });
+      const unsubscribe = pollService.subscribeToPoll(
+        pollData.sessionCode,
+        (updatedPoll) => {
+          setPollData(updatedPoll);
+        },
+      );
 
       return () => unsubscribe();
     }
-  }, [isEditMode, pollData.sessionCode]);
+  }, [isEditMode, pollData]);
 
   // Generate unique session code
   function generateSessionCode(): string {
