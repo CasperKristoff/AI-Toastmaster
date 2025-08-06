@@ -129,7 +129,10 @@ const PollVotingPage: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="text-4xl mb-4">📊</div>
-          <h1 className="text-2xl font-bold text-dark-royalty mb-2">
+          <h1
+            className="text-2xl font-bold text-dark-royalty mb-2"
+            style={{ marginTop: "-75px" }}
+          >
             Live Poll
           </h1>
           <div className="text-sm text-deep-sea/60">Session: {sessionCode}</div>

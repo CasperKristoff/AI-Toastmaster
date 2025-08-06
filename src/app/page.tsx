@@ -7,15 +7,15 @@ export default function HomePage() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-deep-sea/5 via-white to-kimchi/5 relative overflow-hidden">
       {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-indigo-200/30 to-purple-200/30 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-blue-200/30 to-cyan-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-deep-sea/10 to-kimchi/10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-dark-royalty/10 to-deep-sea/10 rounded-full blur-3xl"></div>
       </div>
 
       {/* Navbar */}
-      <nav className="relative z-10 w-full bg-white/70 backdrop-blur-xl border-b border-gray-200/50 px-6 py-4 flex items-center justify-between">
+      <nav className="relative z-10 w-full backdrop-blur-xl border-b border-gray-200/50 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center relative">
           <Image
             src="/ToastmasterImage.png"

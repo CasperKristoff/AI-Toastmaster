@@ -12,7 +12,8 @@ export type SegmentType =
   | "game"
   | "break"
   | "closing"
-  | "poll";
+  | "poll"
+  | "quiz";
 
 export interface Guest {
   id: string;

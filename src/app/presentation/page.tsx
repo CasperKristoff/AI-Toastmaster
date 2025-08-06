@@ -9,6 +9,7 @@ import { SpinTheWheelPresentation } from "../EventProgram/components/SpinTheWhee
 import SlideShowPresentation from "../EventProgram/components/SlideShowPresentation";
 import JeopardyPresentation from "../EventProgram/components/JeopardyPresentation";
 import Poll from "../EventProgram/components/Poll";
+import LiveQuiz from "../EventProgram/components/LiveQuiz";
 
 interface SlideData {
   type:
@@ -19,7 +20,8 @@ interface SlideData {
     | "spinthewheel"
     | "slideshow"
     | "jeopardy"
-    | "poll";
+    | "poll"
+    | "quiz";
   title: string;
   subtitle?: string;
   description?: string;
@@ -47,6 +49,28 @@ interface SlideData {
     sessionCode: string;
     votes: Record<string, number>;
     totalVotes: number;
+  };
+  // Quiz specific fields
+  quizData?: {
+    sessionCode: string;
+    questions: {
+      id: string;
+      question: string;
+      options: {
+        id: string;
+        text: string;
+        isCorrect: boolean;
+        color: string;
+        icon: string;
+      }[];
+      timeLimit: number;
+      pointType: "standard" | "double" | "none";
+      media?: string;
+    }[];
+    currentQuestionIndex: number;
+    isActive: boolean;
+    responses: Record<string, Record<string, string>>;
+    scores: Record<string, number>;
   };
 }
 
@@ -101,13 +125,35 @@ function PresentationPageContent() {
       const storageKey = `jeopardy-state-${eventId}`;
       const savedState = localStorage.getItem(storageKey);
 
+      // For presentation mode, we want to start fresh by default
+      // but allow loading previous state if it exists and is recent
       if (savedState) {
         try {
           const parsedState = JSON.parse(savedState);
-          setJeopardyTileStates(parsedState.tileStates || {});
-          setJeopardyOriginalCompletedStates(
-            parsedState.originalCompletedStates || {},
-          );
+          const timestamp = parsedState.timestamp || 0;
+          const now = Date.now();
+          const hoursSinceLastSave = (now - timestamp) / (1000 * 60 * 60);
+
+          // If the saved state is from the same session (within 1 hour), load it
+          // Otherwise, start fresh for presentation mode
+          if (hoursSinceLastSave < 1) {
+            setJeopardyTileStates(parsedState.tileStates || {});
+            setJeopardyOriginalCompletedStates(
+              parsedState.originalCompletedStates || {},
+            );
+          } else {
+            // Start fresh for presentation mode
+            const initialStates: TileState = {};
+            const initialCompletedStates: TileOriginalState = {};
+            categories.forEach((category) => {
+              category.questions.forEach((question: JeopardyQuestion) => {
+                initialStates[question.id] = "hidden";
+                initialCompletedStates[question.id] = false;
+              });
+            });
+            setJeopardyTileStates(initialStates);
+            setJeopardyOriginalCompletedStates(initialCompletedStates);
+          }
         } catch (error) {
           console.error("Error parsing saved Jeopardy state:", error);
           // Fallback to fresh state
@@ -153,6 +199,28 @@ function PresentationPageContent() {
       localStorage.setItem(storageKey, JSON.stringify(stateToSave));
     },
     [eventId],
+  );
+
+  // Reset Jeopardy state to fresh
+  const _resetJeopardyState = useCallback(
+    (categories: JeopardyCategory[]) => {
+      if (!eventId) return;
+
+      const initialStates: TileState = {};
+      const initialCompletedStates: TileOriginalState = {};
+      categories.forEach((category) => {
+        category.questions.forEach((question: JeopardyQuestion) => {
+          initialStates[question.id] = "hidden";
+          initialCompletedStates[question.id] = false;
+        });
+      });
+      setJeopardyTileStates(initialStates);
+      setJeopardyOriginalCompletedStates(initialCompletedStates);
+
+      // Save the reset state
+      saveJeopardyState(initialStates, initialCompletedStates);
+    },
+    [eventId, saveJeopardyState],
   );
 
   // Full-screen management
@@ -279,11 +347,21 @@ function PresentationPageContent() {
           setEvent(eventData);
           setCurrentSlideIndex(startIndex);
         } else {
-          router.push("/newEvent");
+          // Redirect back to EventProgram if we have an eventId, otherwise to newEvent
+          if (eventId) {
+            router.push(`/EventProgram?eventId=${eventId}`);
+          } else {
+            router.push("/newEvent");
+          }
         }
       } catch (error) {
         console.error("Error fetching event:", error);
-        router.push("/newEvent");
+        // Redirect back to EventProgram if we have an eventId, otherwise to newEvent
+        if (eventId) {
+          router.push(`/EventProgram?eventId=${eventId}`);
+        } else {
+          router.push("/newEvent");
+        }
       }
     };
 
@@ -357,7 +435,7 @@ function PresentationPageContent() {
       if (segment.type === "game" && segment.title === "Spin The Wheel") {
         slides.push({
           type: "spinthewheel",
-          title: "Spin The Wheel",
+          title: "Spin The Wheel!",
           subtitle: `${segment.duration} minutes`,
           description: segment.description,
           duration: segment.duration,
@@ -369,18 +447,32 @@ function PresentationPageContent() {
       // Special handling for Jeopardy segments
       else if (segment.type === "game" && segment.title === "Jeopardy") {
         try {
-          const jeopardyData = JSON.parse(segment.content);
-          const categories = jeopardyData.categories || [];
+          // Only try to parse if content exists and looks like JSON
+          if (segment.content && segment.content.trim().startsWith("{")) {
+            const jeopardyData = JSON.parse(segment.content);
+            const categories = jeopardyData.categories || [];
 
-          slides.push({
-            type: "jeopardy",
-            title: "Jeopardy",
-            subtitle: `${segment.duration} minutes`,
-            description: segment.description,
-            duration: segment.duration,
-            jeopardyCategories: categories,
-            speakerNotes: `Click on any tile to reveal the question. Click again to show the answer. Mark as complete when done.`,
-          });
+            slides.push({
+              type: "jeopardy",
+              title: "Jeopardy!",
+              subtitle: `${segment.duration} minutes`,
+              description: segment.description,
+              duration: segment.duration,
+              jeopardyCategories: categories,
+              speakerNotes: `Click on any tile to reveal the question. Click again to show the answer. Mark as complete when done.`,
+            });
+          } else {
+            // Fallback to generic segment if content is not JSON
+            slides.push({
+              type: "segment",
+              title: segment.title,
+              subtitle: `${segment.duration} minutes`,
+              description: segment.description,
+              duration: segment.duration,
+              segmentType: segment.type,
+              speakerNotes: segment.content || `Notes for ${segment.title}`,
+            });
+          }
         } catch (error) {
           console.error("Error parsing Jeopardy data:", error);
           slides.push({
@@ -397,16 +489,30 @@ function PresentationPageContent() {
       // Special handling for Slide Show segments
       else if (segment.type === "activity" && segment.title === "Slide Show") {
         try {
-          const slideShowData = JSON.parse(segment.content);
-          slides.push({
-            type: "slideshow",
-            title: "Slide Show",
-            subtitle: `${segment.duration} minutes`,
-            description: segment.description,
-            duration: segment.duration,
-            photoUrls: slideShowData.photoUrls || [],
-            speakerNotes: `Enjoy the slideshow! Photos will auto-advance every 3 seconds. Use arrow keys or click to navigate manually.`,
-          });
+          // Only try to parse if content exists and looks like JSON
+          if (segment.content && segment.content.trim().startsWith("{")) {
+            const slideShowData = JSON.parse(segment.content);
+            slides.push({
+              type: "slideshow",
+              title: "Photo Show!",
+              subtitle: `${segment.duration} minutes`,
+              description: segment.description,
+              duration: segment.duration,
+              photoUrls: slideShowData.photoUrls || [],
+              speakerNotes: `Enjoy the slideshow! Photos will auto-advance every 3 seconds. Use arrow keys or click to navigate manually.`,
+            });
+          } else {
+            // Fallback to generic segment if content is not JSON
+            slides.push({
+              type: "segment",
+              title: segment.title,
+              subtitle: `${segment.duration} minutes`,
+              description: segment.description,
+              duration: segment.duration,
+              segmentType: segment.type,
+              speakerNotes: segment.content || `Notes for ${segment.title}`,
+            });
+          }
         } catch (error) {
           console.error("Error parsing slideshow data:", error);
           slides.push({
@@ -435,7 +541,7 @@ function PresentationPageContent() {
 
           slides.push({
             type: "poll",
-            title: "Live Poll",
+            title: "Live Poll!",
             subtitle: `${segment.duration} minutes`,
             description: "",
             duration: segment.duration,
@@ -444,6 +550,53 @@ function PresentationPageContent() {
           });
         } catch (error) {
           console.error("Error parsing poll data:", error);
+          slides.push({
+            type: "segment",
+            title: segment.title,
+            subtitle: `${segment.duration} minutes`,
+            description: segment.description,
+            duration: segment.duration,
+            segmentType: segment.type,
+            speakerNotes: segment.content || `Notes for ${segment.title}`,
+          });
+        }
+      }
+      // Special handling for Quiz segments
+      else if (segment.type === "quiz") {
+        try {
+          const quizData = segment.data?.quizData as {
+            sessionCode: string;
+            questions: {
+              id: string;
+              question: string;
+              options: {
+                id: string;
+                text: string;
+                isCorrect: boolean;
+                color: string;
+                icon: string;
+              }[];
+              timeLimit: number;
+              pointType: "standard" | "double" | "none";
+              media?: string;
+            }[];
+            currentQuestionIndex: number;
+            isActive: boolean;
+            responses: Record<string, Record<string, string>>;
+            scores: Record<string, number>;
+          };
+
+          slides.push({
+            type: "quiz",
+            title: "Quiz Time!",
+            subtitle: `${segment.duration} minutes`,
+            description: "",
+            duration: segment.duration,
+            quizData: quizData,
+            speakerNotes: `Guests can scan the QR code to join the quiz. Questions will be displayed with a timer.`,
+          });
+        } catch (error) {
+          console.error("Error parsing quiz data:", error);
           slides.push({
             type: "segment",
             title: segment.title,
@@ -528,6 +681,17 @@ function PresentationPageContent() {
     setShowFunFactAnswer(!showFunFactAnswer);
   }, [showFunFactAnswer]);
 
+  // Set document title based on slide type
+  useEffect(() => {
+    if (currentSlide) {
+      if (currentSlide.type === "quiz") {
+        document.title = "AI Toastmaster - Quiz Time!";
+      } else {
+        document.title = `AI Toastmaster - ${currentSlide.title}`;
+      }
+    }
+  }, [currentSlide]);
+
   // Keyboard navigation
   const handleKeyPress = useCallback(
     (e: KeyboardEvent) => {
@@ -591,6 +755,12 @@ function PresentationPageContent() {
             }
           }
           break;
+        case "r":
+        case "R":
+          if (currentSlide?.type === "funfact") {
+            toggleFunFactAnswer();
+          }
+          break;
       }
     },
     [
@@ -638,7 +808,12 @@ function PresentationPageContent() {
     if (isFullScreen) {
       exitFullScreen();
     }
-    router.push("/newEvent");
+    // Redirect back to the EventProgram page for the same event
+    if (eventId) {
+      router.push(`/EventProgram?eventId=${eventId}`);
+    } else {
+      router.push("/newEvent");
+    }
   };
 
   // Event listeners
@@ -744,10 +919,28 @@ function PresentationPageContent() {
 
           {/* Slide Content */}
           <div className="text-center w-full max-w-6xl mx-auto px-4">
-            {/* Title */}
-            <h1 className="text-7xl font-bold text-dark-royalty mb-8 leading-tight tracking-tight">
-              {currentSlide.title}
-            </h1>
+            {/* Title - Show for all slides */}
+            {currentSlide.type === "title" ? (
+              <h1 className="text-7xl font-bold text-dark-royalty mb-8 leading-tight tracking-tight">
+                {currentSlide.title}
+              </h1>
+            ) : currentSlide.type ===
+              "quiz" ? // Quiz title will be handled by the LiveQuiz component
+            null : (
+              <h1
+                className="text-7xl font-bold text-dark-royalty mb-8 leading-tight tracking-tight"
+                style={{
+                  marginTop: "-15rem",
+                  position: "absolute",
+                  top: "35%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "100%",
+                }}
+              >
+                {currentSlide.title}
+              </h1>
+            )}
 
             {/* Description */}
             {currentSlide.description && (
@@ -841,6 +1034,26 @@ function PresentationPageContent() {
                 }}
                 event={event}
                 isEditMode={false}
+              />
+            )}
+
+            {/* Quiz specific content */}
+            {currentSlide.type === "quiz" && currentSlide.quizData && (
+              <LiveQuiz
+                segment={{
+                  id: "presentation-quiz",
+                  title: "Live Quiz",
+                  type: "quiz",
+                  description: currentSlide.description || "",
+                  duration: currentSlide.duration || 10,
+                  content: "",
+                  order: 0,
+                  data: { quizData: currentSlide.quizData },
+                }}
+                event={event}
+                isEditMode={false}
+                isPresentation={false}
+                hideTitle={true}
               />
             )}
           </div>

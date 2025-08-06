@@ -30,6 +30,8 @@ export function useEventHandlers({
     useState(false);
   const [showSlideShowEditModal, setShowSlideShowEditModal] = useState(false);
   const [showJeopardyEditModal, setShowJeopardyEditModal] = useState(false);
+  const [showLiveQuizEditModal, setShowLiveQuizEditModal] = useState(false);
+  const [showPollEditModal, setShowPollEditModal] = useState(false);
 
   const [newSegment, setNewSegment] = useState({
     title: "",
@@ -267,6 +269,26 @@ export function useEventHandlers({
           personalFunFacts: segment.personalFunFacts || {},
         });
         setShowJeopardyEditModal(true);
+      } else if (segment.title === "Live Quiz") {
+        // Open LiveQuiz modal with existing data
+        setNewSegment({
+          title: segment.title,
+          description: segment.description,
+          duration: segment.duration.toString(),
+          type: segment.type,
+          personalFunFacts: segment.personalFunFacts || {},
+        });
+        setShowLiveQuizEditModal(true);
+      } else if (segment.title === "Live Poll") {
+        // Open Poll modal with existing data
+        setNewSegment({
+          title: segment.title,
+          description: segment.description,
+          duration: segment.duration.toString(),
+          type: segment.type,
+          personalFunFacts: segment.personalFunFacts || {},
+        });
+        setShowPollEditModal(true);
       } else {
         // For other segments, use the generic AddSegmentModal
         setNewSegment({
@@ -389,6 +411,48 @@ export function useEventHandlers({
     setSegmentToEdit(null);
   };
 
+  const handleSaveLiveQuizEdit = (updatedSegment: EventSegment) => {
+    if (!event || !segmentToEdit) return;
+
+    const updatedEvent: Event = {
+      ...event,
+      timeline: event.timeline.map((segment) =>
+        segment.id === segmentToEdit.id
+          ? {
+              ...segment,
+              ...updatedSegment,
+              id: segmentToEdit.id, // Keep the original ID
+            }
+          : segment,
+      ),
+    };
+
+    handleEventUpdate(updatedEvent);
+    setShowLiveQuizEditModal(false);
+    setSegmentToEdit(null);
+  };
+
+  const handleSavePollEdit = (updatedSegment: EventSegment) => {
+    if (!event || !segmentToEdit) return;
+
+    const updatedEvent: Event = {
+      ...event,
+      timeline: event.timeline.map((segment) =>
+        segment.id === segmentToEdit.id
+          ? {
+              ...segment,
+              ...updatedSegment,
+              id: segmentToEdit.id, // Keep the original ID
+            }
+          : segment,
+      ),
+    };
+
+    handleEventUpdate(updatedEvent);
+    setShowPollEditModal(false);
+    setSegmentToEdit(null);
+  };
+
   const handleAddSegmentFromAI = (segment: EventSegment) => {
     if (!event) return;
     const updatedEvent: Event = {
@@ -431,6 +495,10 @@ export function useEventHandlers({
     setShowSlideShowEditModal,
     showJeopardyEditModal,
     setShowJeopardyEditModal,
+    showLiveQuizEditModal,
+    setShowLiveQuizEditModal,
+    showPollEditModal,
+    setShowPollEditModal,
     newSegment,
     setNewSegment,
     editingSegment,
@@ -457,6 +525,8 @@ export function useEventHandlers({
     handleSaveSpinTheWheelEdit,
     handleSaveSlideShowEdit,
     handleSaveJeopardyEdit,
+    handleSaveLiveQuizEdit,
+    handleSavePollEdit,
     handleAddSegmentFromAI,
     handleDeleteSegment,
     handleClickOutside,

@@ -5,6 +5,7 @@ import SpinTheWheel from "../SpinTheWheel";
 import SlideShow from "../SlideShow";
 import Jeopardy from "../Jeopardy";
 import Poll from "../Poll";
+import LiveQuiz from "../LiveQuiz";
 import Modal from "../../../../components/Modal";
 
 interface AISegmentsProps {
@@ -29,6 +30,7 @@ const AISegments: React.FC<AISegmentsProps> = ({
   const [showSlideShowModal, setShowSlideShowModal] = useState(false);
   const [showJeopardyModal, setShowJeopardyModal] = useState(false);
   const [showPollModal, setShowPollModal] = useState(false);
+  const [showQuizModal, setShowQuizModal] = useState(false);
 
   const handleSavePersonalFacts = (funFacts: Record<string, string>) => {
     setPersonalFunFacts(funFacts);
@@ -82,6 +84,18 @@ const AISegments: React.FC<AISegmentsProps> = ({
     onAddSegment(segment);
     // Close the main AI segments modal and return to EventProgram
     onClose();
+  };
+
+  const handleSaveQuiz = (segment: EventSegment) => {
+    setShowQuizModal(false);
+    onAddSegment(segment);
+    // Close the main AI segments modal and return to EventProgram
+    onClose();
+  };
+
+  const handleQuizUpdate = (updatedSegment: EventSegment) => {
+    // This is called when the user clicks "Save Quiz & Close"
+    handleSaveQuiz(updatedSegment);
   };
 
   return (
@@ -222,6 +236,27 @@ const AISegments: React.FC<AISegmentsProps> = ({
                   </div>
                 </div>
               </div>
+              <div
+                className="group bg-gradient-to-br from-orange-100 to-red-100 backdrop-blur-sm rounded-lg p-6 border border-dark-royalty/10 hover:border-dark-royalty/30 transition-all duration-300 hover:shadow-lg cursor-pointer"
+                onClick={() => setShowQuizModal(true)}
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="text-3xl group-hover:scale-110 transition-transform duration-300">
+                    🎯
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-dark-royalty mb-1">
+                      Live Quiz
+                    </h3>
+                    <p className="text-deep-sea/70 text-sm">
+                      Interactive quiz with real-time responses
+                    </p>
+                  </div>
+                  <div className="text-2xl text-deep-sea/40 group-hover:text-dark-royalty transition-colors">
+                    ➕
+                  </div>
+                </div>
+              </div>
             </>
           )}
         </div>
@@ -296,6 +331,87 @@ const AISegments: React.FC<AISegmentsProps> = ({
           onUpdate={(updatedSegment) => {
             // Save the poll segment to the event program
             handleSavePoll(updatedSegment);
+          }}
+        />
+      </Modal>
+
+      {/* Quiz Modal - Rendered outside the AISegments modal */}
+      <Modal
+        isOpen={showQuizModal}
+        onClose={() => setShowQuizModal(false)}
+        title="Create Live Quiz"
+        onSave={() => {
+          // The quiz data will be saved through the LiveQuiz component's save button
+          // This modal save is just a fallback
+        }}
+        saveDisabled={true}
+      >
+        <LiveQuiz
+          segment={{
+            id: Date.now().toString(),
+            title: "Live Quiz",
+            type: "quiz",
+            description: "Interactive quiz with real-time responses",
+            duration: 15,
+            content: "Guests can join via QR code and answer questions",
+            order: 0,
+            data: {
+              quizData: {
+                sessionCode: Math.random()
+                  .toString(36)
+                  .substring(2, 8)
+                  .toUpperCase(),
+                questions: [
+                  {
+                    id: "1",
+                    question: "How many counties are there in Norway?",
+                    options: [
+                      {
+                        id: "a",
+                        text: "10",
+                        isCorrect: false,
+                        color: "#FF6B6B",
+                        icon: "▲",
+                      },
+                      {
+                        id: "b",
+                        text: "15",
+                        isCorrect: true,
+                        color: "#4ECDC4",
+                        icon: "◆",
+                      },
+                      {
+                        id: "c",
+                        text: "13",
+                        isCorrect: false,
+                        color: "#FFE66D",
+                        icon: "●",
+                      },
+                      {
+                        id: "d",
+                        text: "22",
+                        isCorrect: false,
+                        color: "#95E1D3",
+                        icon: "■",
+                      },
+                    ],
+                    timeLimit: 20,
+                    pointType: "standard" as const,
+                  },
+                ],
+                currentQuestionIndex: 0,
+                isActive: false,
+                responses: {},
+                scores: {},
+              },
+            },
+          }}
+          event={event}
+          isEditMode={true}
+          isPresentation={false}
+          onUpdate={(updatedSegment) => {
+            // Save the quiz segment to the event program
+            handleQuizUpdate(updatedSegment);
           }}
         />
       </Modal>

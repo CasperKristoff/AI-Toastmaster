@@ -13,6 +13,12 @@ import Guests from "../newEvent/components/Guests";
 import EventHeader from "./components/sections/EventHeader";
 import { useEventHandlers } from "./components/sections/EventHandlers";
 import { formatTime, formatDate } from "./components/sections/EventUtils";
+import Modal from "../../components/Modal";
+import LiveQuiz from "./components/LiveQuiz";
+import SpinTheWheel from "./components/SpinTheWheel";
+import SlideShow from "./components/SlideShow";
+import Jeopardy from "./components/Jeopardy";
+import Poll from "./components/Poll";
 
 import {
   DndContext,
@@ -887,6 +893,144 @@ export default function TimelinePage() {
             onClose={() => setShowAISegmentsModal(false)}
             onAddSegment={eventHandlers.handleAddSegmentFromAI}
           />
+
+          {/* Personal Fun Facts Edit Modal */}
+          <PersonalFunfact
+            isModal={true}
+            isOpen={eventHandlers.showPersonalFunfactEditModal}
+            onClose={() => {
+              eventHandlers.setShowPersonalFunfactEditModal(false);
+              eventHandlers.setSegmentToEdit(null);
+            }}
+            guests={event?.guests || []}
+            funFacts={eventHandlers.segmentToEdit?.personalFunFacts || {}}
+            onFunFactsChange={eventHandlers.handleSavePersonalFunfactsEdit}
+            isEditable={true}
+          />
+
+          {/* Spin The Wheel Edit Modal */}
+          <SpinTheWheel
+            guests={event?.guests || []}
+            isOpen={eventHandlers.showSpinTheWheelEditModal}
+            onClose={() => {
+              eventHandlers.setShowSpinTheWheelEditModal(false);
+              eventHandlers.setSegmentToEdit(null);
+            }}
+            onSave={eventHandlers.handleSaveSpinTheWheelEdit}
+            initialChallenge={eventHandlers.segmentToEdit?.description || ""}
+          />
+
+          {/* Slide Show Edit Modal */}
+          <SlideShow
+            event={event}
+            isOpen={eventHandlers.showSlideShowEditModal}
+            onClose={() => {
+              eventHandlers.setShowSlideShowEditModal(false);
+              eventHandlers.setSegmentToEdit(null);
+            }}
+            onSave={eventHandlers.handleSaveSlideShowEdit}
+            initialSegment={eventHandlers.segmentToEdit || undefined}
+          />
+
+          {/* Jeopardy Edit Modal */}
+          <Jeopardy
+            event={event}
+            isOpen={eventHandlers.showJeopardyEditModal}
+            onClose={() => {
+              eventHandlers.setShowJeopardyEditModal(false);
+              eventHandlers.setSegmentToEdit(null);
+            }}
+            onSave={eventHandlers.handleSaveJeopardyEdit}
+            initialSegment={eventHandlers.segmentToEdit || undefined}
+          />
+
+          {/* Poll Edit Modal */}
+          <Modal
+            isOpen={eventHandlers.showPollEditModal}
+            onClose={() => {
+              eventHandlers.setShowPollEditModal(false);
+              eventHandlers.setSegmentToEdit(null);
+            }}
+            title="Edit Live Poll"
+            maxWidth="max-w-4xl"
+            minHeight="min-h-[600px]"
+            saveDisabled={true}
+            disableEnterSave={true}
+          >
+            <Poll
+              segment={
+                eventHandlers.segmentToEdit || {
+                  id: "",
+                  title: "Live Poll",
+                  type: "poll",
+                  description: "",
+                  duration: 10,
+                  content: "",
+                  order: 0,
+                  data: {
+                    question: "Who should take a shot?",
+                    options: ["Option 1", "Option 2", "Option 3"],
+                    showResultsLive: true,
+                    allowMultipleSelections: false,
+                    sessionCode: Math.random()
+                      .toString(36)
+                      .substring(2, 8)
+                      .toUpperCase(),
+                    votes: {},
+                    totalVotes: 0,
+                  },
+                }
+              }
+              event={event}
+              isEditMode={true}
+              onUpdate={eventHandlers.handleSavePollEdit}
+            />
+          </Modal>
+
+          {/* LiveQuiz Edit Modal */}
+          <Modal
+            isOpen={eventHandlers.showLiveQuizEditModal}
+            onClose={() => {
+              eventHandlers.setShowLiveQuizEditModal(false);
+              eventHandlers.setSegmentToEdit(null);
+            }}
+            title="Edit Live Quiz"
+            maxWidth="max-w-4xl"
+            minHeight="min-h-[600px]"
+            saveDisabled={true}
+            disableEnterSave={true}
+          >
+            <LiveQuiz
+              segment={
+                eventHandlers.segmentToEdit || {
+                  id: "",
+                  title: "Live Quiz",
+                  type: "quiz",
+                  description: "",
+                  duration: 15,
+                  content: "",
+                  order: 0,
+                  data: {
+                    quizData: {
+                      sessionCode: Math.random()
+                        .toString(36)
+                        .substring(2, 8)
+                        .toUpperCase(),
+                      questions: [],
+                      currentQuestionIndex: 0,
+                      isActive: false,
+                      responses: {},
+                      scores: {},
+                    },
+                  },
+                }
+              }
+              event={event}
+              isEditMode={true}
+              isPresentation={false}
+              onUpdate={eventHandlers.handleSaveLiveQuizEdit}
+            />
+          </Modal>
         </div>
       </div>
     </DndContext>

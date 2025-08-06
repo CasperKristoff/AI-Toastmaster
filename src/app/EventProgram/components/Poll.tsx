@@ -136,7 +136,12 @@ const Poll: React.FC<PollProps> = ({
         <div className="flex items-center space-x-3 mb-6">
           <div className="text-3xl">📊</div>
           <div>
-            <h3 className="text-xl font-bold text-dark-royalty">Live Poll</h3>
+            <h3
+              className="text-xl font-bold text-dark-royalty"
+              style={{ marginTop: "-37.8px" }}
+            >
+              Live Poll
+            </h3>
           </div>
         </div>
 
