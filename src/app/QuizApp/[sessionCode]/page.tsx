@@ -411,9 +411,45 @@ const QuizVotingPage: React.FC = () => {
     );
   }
 
-  // Quiz complete
+  // Quiz complete - BUT check if we should show QuizResults instead
   if (quizData.isComplete) {
-    // Calculate participant position
+    // If this is the last question and we're showing results, 
+    // don't show the mobile completion screen
+    if (quizData.currentQuestionIndex + 1 >= quizData.questions.length && quizData.showResults) {
+      // Show a message that results are being displayed on the host side
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-dark-royalty/10 via-deep-sea/5 to-kimchi/10 p-4">
+          <div className="max-w-md mx-auto">
+            <div className="text-center mb-8">
+              <div className="text-6xl mb-4">🏆</div>
+              <h1 className="text-2xl font-bold text-dark-royalty mb-2">
+                Quiz Results Available!
+              </h1>
+            </div>
+
+            <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-6 border border-dark-royalty/10 mb-6">
+              <div className="text-center">
+                <h2 className="text-xl font-bold text-dark-royalty mb-4">
+                  Final Results
+                </h2>
+                <div className="text-lg text-deep-sea/70 mb-4">
+                  The host is now showing the final results with the podium and top 3 players!
+                </div>
+                <div className="text-sm text-deep-sea/60">
+                  Check the presentation screen for the complete results.
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center text-sm text-deep-sea/60">
+              Thanks for participating!
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Calculate participant position for regular completion
     let position = "N/A";
     let positionEmoji = "🏆";
 

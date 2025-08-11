@@ -494,16 +494,15 @@ function QuizPresentation({
       // DON'T update local quiz data with isComplete: true
       // This prevents any interference with QuizResults rendering
       
-      if (onQuizComplete) {
-        onQuizComplete();
-      }
+      // DON'T call onQuizComplete() - this triggers the presentation page
+      // to show "Quiz Complete" overlay which covers QuizResults.tsx
       
       console.log("QuizPresentation: Final results shown successfully");
     } catch (error) {
       console.error("Error showing final results:", error);
       // Don't revert the state - keep QuizResults showing
     }
-  }, [quizData?.sessionCode, onQuizComplete]);
+  }, [quizData?.sessionCode]);
 
   // Keyboard controls
   useEffect(() => {

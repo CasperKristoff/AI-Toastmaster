@@ -360,11 +360,10 @@ class QuizService {
 
       const nextIndex = quizData.currentQuestionIndex + 1;
       if (nextIndex >= quizData.questions.length) {
-        // Quiz is complete
-        await this.updateQuiz(sessionCode, {
-          isComplete: true,
-          showResults: true,
-        });
+        // Don't auto-complete the quiz when reaching the last question
+        // Let the user explicitly click "Show Results" to see QuizResults
+        console.log("QuizService: Reached last question - don't auto-complete");
+        return true;
       } else {
         await this.updateQuiz(sessionCode, {
           currentQuestionIndex: nextIndex,
