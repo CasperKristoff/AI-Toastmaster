@@ -413,11 +413,41 @@ const QuizVotingPage: React.FC = () => {
 
   // Quiz complete
   if (quizData.isComplete) {
+    // Calculate participant position
+    let position = "N/A";
+    let positionEmoji = "🏆";
+    
+    if (participant && quizData.participants) {
+      const leaderboard = Object.entries(quizData.participants)
+        .map(([_id, p]) => ({
+          username: p.username,
+          totalScore: p.totalScore,
+        }))
+        .sort((a, b) => b.totalScore - a.totalScore);
+      
+      const participantIndex = leaderboard.findIndex(p => p.username === participant.username);
+      if (participantIndex !== -1) {
+        const actualPosition = participantIndex + 1;
+        position = actualPosition.toString();
+        
+        // Set position emoji
+        if (actualPosition === 1) {
+          positionEmoji = "🥇";
+        } else if (actualPosition === 2) {
+          positionEmoji = "🥈";
+        } else if (actualPosition === 3) {
+          positionEmoji = "🥉";
+        } else {
+          positionEmoji = "🏆";
+        }
+      }
+    }
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-dark-royalty/10 via-deep-sea/5 to-kimchi/10 p-4">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8">
-            <div className="text-4xl mb-4">🏆</div>
+            <div className="text-4xl mb-4">{positionEmoji}</div>
             <h1 className="text-2xl font-bold text-dark-royalty mb-2">
               Quiz Complete!
             </h1>
@@ -432,6 +462,19 @@ const QuizVotingPage: React.FC = () => {
                 {participant ? participant.totalScore : 0}
               </div>
               <div className="text-sm text-deep-sea/60">points</div>
+              
+              {/* Position Display */}
+              <div className="mt-4 pt-4 border-t border-dark-royalty/10">
+                <h3 className="text-lg font-bold text-dark-royalty mb-2">
+                  Your Position
+                </h3>
+                <div className="text-3xl font-bold text-dark-royalty">
+                  {position}
+                </div>
+                <div className="text-sm text-deep-sea/60">
+                  {position === "1" ? "st" : position === "2" ? "nd" : position === "3" ? "rd" : "th"} place
+                </div>
+              </div>
             </div>
           </div>
 

@@ -508,8 +508,8 @@ function QuizPresentation({
     );
   }
 
-  if (!currentQuestion) {
-    // Show results component when quiz is complete
+  // Don't render questions if quiz is complete
+  if (quizData.isComplete) {
     return (
       <QuizResults
         _quizData={quizData}
