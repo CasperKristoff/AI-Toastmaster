@@ -329,12 +329,9 @@ function QuizPresentation({
                     isComplete: updatedQuiz.isComplete,
                   }));
                   
-                  // Sync QuizResults state with Firebase
-                  if (updatedQuiz.isComplete) {
-                    setShouldShowQuizResults(true);
-                  } else if (updatedQuiz.isActive) {
-                    setShouldShowQuizResults(false);
-                  }
+                  // Don't sync QuizResults state with Firebase isComplete
+                  // QuizResults should only show when explicitly requested via showFinalResults
+                  // This prevents mobile page from triggering completion state
                 }
               },
             );
@@ -443,12 +440,9 @@ function QuizPresentation({
     );
 
     if (nextIndex >= quizData.questions.length) {
-      console.log("QuizPresentation: Quiz completed");
-      await quizService.updateQuiz(quizData.sessionCode, {
-        isComplete: true,
-        showResults: true,
-        isActive: false,
-      });
+      console.log("QuizPresentation: Reached last question - don't auto-complete");
+      // Don't auto-complete the quiz when reaching the last question
+      // Let the user explicitly click "Show Results" to see QuizResults
       if (onQuizComplete) {
         onQuizComplete();
       }
@@ -489,15 +483,16 @@ function QuizPresentation({
     setShouldShowQuizResults(true);
     
     try {
-      // Update Firebase in background
+      // Update Firebase in background - DON'T set isComplete to true
+      // This prevents mobile page from showing its completion screen
       await quizService.updateQuiz(quizData.sessionCode, {
-        isComplete: true,
         showResults: true,
         isActive: false,
+        // isComplete: false - Keep quiz active so mobile doesn't show completion
       });
       
-      // Update local quiz data
-      updateQuizData({ isComplete: true });
+      // DON'T update local quiz data with isComplete: true
+      // This prevents any interference with QuizResults rendering
       
       if (onQuizComplete) {
         onQuizComplete();
@@ -508,7 +503,7 @@ function QuizPresentation({
       console.error("Error showing final results:", error);
       // Don't revert the state - keep QuizResults showing
     }
-  }, [quizData?.sessionCode, updateQuizData, onQuizComplete]);
+  }, [quizData?.sessionCode, onQuizComplete]);
 
   // Keyboard controls
   useEffect(() => {
@@ -564,11 +559,14 @@ function QuizPresentation({
     );
   }
 
-  // SIMPLIFIED: Show QuizResults when this state is true
+  // ROBUST: Show QuizResults when this state is true
   if (shouldShowQuizResults) {
     console.log("QuizPresentation: RENDERING QuizResults component");
     console.log("QuizPresentation: shouldShowQuizResults:", shouldShowQuizResults);
+    console.log("QuizPresentation: This will override ANY other rendering logic");
     
+    // This return statement takes absolute priority over everything else
+    // No other code can execute after this return
     return (
       <QuizResults
         _quizData={quizData}
