@@ -476,12 +476,30 @@ function QuizPresentation({
         case "r":
           toggleResults();
           break;
+        case "s":
+          // Show Results shortcut for last question
+          if (quizData.currentQuestionIndex + 1 >= quizData.questions.length) {
+            if (!quizData?.sessionCode) return;
+            console.log("QuizPresentation: Quiz completed via keyboard shortcut");
+            quizService.updateQuiz(quizData.sessionCode, {
+              isComplete: true,
+              showResults: true,
+              isActive: false,
+            }).then(() => {
+              // Update local state immediately to trigger re-render
+              updateQuizData({ isComplete: true });
+              if (onQuizComplete) {
+                onQuizComplete();
+              }
+            });
+          }
+          break;
       }
     };
 
     document.addEventListener("keydown", handleKeyPress);
     return () => document.removeEventListener("keydown", handleKeyPress);
-  }, [currentQuestion, showResults, goToNextQuestion, toggleResults]);
+  }, [currentQuestion, showResults, goToNextQuestion, toggleResults, quizData?.sessionCode, quizData.currentQuestionIndex, quizData.questions.length, updateQuizData, onQuizComplete]);
 
   // Debug logging
   console.log("QuizPresentation: Current quiz state:", {
@@ -688,7 +706,7 @@ function QuizPresentation({
       {/* Control Instructions - Bottom left */}
       <div className="absolute bottom-2 left-8">
         <div className="bg-white/80 rounded-lg shadow-sm px-4 py-2 text-sm text-gray-600">
-          <div>R: Toggle Results | N: Next</div>
+          <div>R: Toggle Results | N: Next | S: Show Results (last question)</div>
         </div>
       </div>
 
@@ -706,9 +724,30 @@ function QuizPresentation({
           className="text-gray-600 text-lg font-medium cursor-pointer hover:text-gray-800 transition-colors px-4 py-2 bg-white/80 rounded-lg shadow-sm"
         >
           {quizData.currentQuestionIndex + 1 >= quizData.questions.length
-            ? "Finish"
+            ? "Next"
             : "Next"}
         </button>
+        {quizData.currentQuestionIndex + 1 >= quizData.questions.length && (
+          <button
+            onClick={async () => {
+              if (!quizData?.sessionCode) return;
+              console.log("QuizPresentation: Quiz completed, showing results");
+              await quizService.updateQuiz(quizData.sessionCode, {
+                isComplete: true,
+                showResults: true,
+                isActive: false,
+              });
+              // Update local state immediately to trigger re-render
+              updateQuizData({ isComplete: true });
+              if (onQuizComplete) {
+                onQuizComplete();
+              }
+            }}
+            className="text-green-600 text-lg font-medium cursor-pointer hover:text-green-800 transition-colors px-4 py-2 bg-white/80 rounded-lg shadow-sm"
+          >
+            Show Results
+          </button>
+        )}
       </div>
     </div>
   );
