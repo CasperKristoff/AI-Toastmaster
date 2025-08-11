@@ -198,6 +198,9 @@ function QuizPresentation({
   const [liveQuizData, setLiveQuizData] = useState<QuizData | null>(null);
   const [isQuizInitialized, setIsQuizInitialized] = useState(false);
 
+  // Local state to track quiz completion for immediate re-rendering
+  const [isQuizComplete, setIsQuizComplete] = useState(false);
+
   const currentQuestion: QuizQuestion | null =
     quizData.questions[quizData.currentQuestionIndex] || null;
 
@@ -278,6 +281,9 @@ function QuizPresentation({
       };
       setQuizData(initializedData);
 
+      // Reset local completion state
+      setIsQuizComplete(false);
+
       // Initialize quiz in Firestore if not already done
       if (!isQuizInitialized) {
         const liveQuizDataForService = {
@@ -325,6 +331,13 @@ function QuizPresentation({
                     showResults: updatedQuiz.showResults,
                     isComplete: updatedQuiz.isComplete,
                   }));
+
+                  // Sync local completion state with Firebase
+                  if (updatedQuiz.isComplete) {
+                    setIsQuizComplete(true);
+                  } else if (updatedQuiz.isActive) {
+                    setIsQuizComplete(false);
+                  }
                 }
               },
             );
@@ -480,18 +493,34 @@ function QuizPresentation({
           // Show Results shortcut for last question
           if (quizData.currentQuestionIndex + 1 >= quizData.questions.length) {
             if (!quizData?.sessionCode) return;
-            console.log("QuizPresentation: Quiz completed via keyboard shortcut");
-            quizService.updateQuiz(quizData.sessionCode, {
-              isComplete: true,
-              showResults: true,
-              isActive: false,
-            }).then(() => {
-              // Update local state immediately to trigger re-render
-              updateQuizData({ isComplete: true });
-              if (onQuizComplete) {
-                onQuizComplete();
-              }
-            });
+            console.log(
+              "QuizPresentation: Quiz completed via keyboard shortcut",
+            );
+
+            // Immediately set local completion state to trigger re-render
+            setIsQuizComplete(true);
+
+            quizService
+              .updateQuiz(quizData.sessionCode, {
+                isComplete: true,
+                showResults: true,
+                isActive: false,
+              })
+              .then(() => {
+                // Also update the main quiz data
+                updateQuizData({ isComplete: true });
+                if (onQuizComplete) {
+                  onQuizComplete();
+                }
+              })
+              .catch((error) => {
+                console.error(
+                  "Error updating quiz completion via keyboard:",
+                  error,
+                );
+                // Revert local state if Firebase update fails
+                setIsQuizComplete(false);
+              });
           }
           break;
       }
@@ -499,7 +528,17 @@ function QuizPresentation({
 
     document.addEventListener("keydown", handleKeyPress);
     return () => document.removeEventListener("keydown", handleKeyPress);
-  }, [currentQuestion, showResults, goToNextQuestion, toggleResults, quizData?.sessionCode, quizData.currentQuestionIndex, quizData.questions.length, updateQuizData, onQuizComplete]);
+  }, [
+    currentQuestion,
+    showResults,
+    goToNextQuestion,
+    toggleResults,
+    quizData?.sessionCode,
+    quizData.currentQuestionIndex,
+    quizData.questions.length,
+    updateQuizData,
+    onQuizComplete,
+  ]);
 
   // Debug logging
   console.log("QuizPresentation: Current quiz state:", {
@@ -508,6 +547,9 @@ function QuizPresentation({
     currentQuestion: currentQuestion?.question,
     currentQuestionData: currentQuestion,
     hasQuestions: quizData.questions.length > 0,
+    isComplete: quizData.isComplete,
+    isQuizComplete: isQuizComplete,
+    shouldShowQuizResults: quizData.isComplete || isQuizComplete,
   });
 
   // Safety check
@@ -527,7 +569,32 @@ function QuizPresentation({
   }
 
   // Don't render questions if quiz is complete
-  if (quizData.isComplete) {
+  if (quizData.isComplete || isQuizComplete) {
+    console.log("QuizPresentation: Rendering QuizResults component");
+    console.log("QuizPresentation: quizData.isComplete:", quizData.isComplete);
+    console.log("QuizPresentation: isQuizComplete:", isQuizComplete);
+    console.log(
+      "QuizPresentation: QuizResults component available:",
+      typeof QuizResults,
+    );
+
+    // Double-check that QuizResults is available
+    if (typeof QuizResults === "undefined") {
+      console.error("QuizPresentation: QuizResults component is undefined!");
+      return (
+        <div className="absolute inset-0 w-full h-full bg-white flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-4xl font-bold text-red-600 mb-4">
+              Error: QuizResults Component Not Found
+            </h2>
+            <p className="text-xl text-gray-600">
+              Please check the import and component definition.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <QuizResults
         _quizData={quizData}
@@ -706,7 +773,9 @@ function QuizPresentation({
       {/* Control Instructions - Bottom left */}
       <div className="absolute bottom-2 left-8">
         <div className="bg-white/80 rounded-lg shadow-sm px-4 py-2 text-sm text-gray-600">
-          <div>R: Toggle Results | N: Next | S: Show Results (last question)</div>
+          <div>
+            R: Toggle Results | N: Next | S: Show Results (last question)
+          </div>
         </div>
       </div>
 
@@ -731,16 +800,37 @@ function QuizPresentation({
           <button
             onClick={async () => {
               if (!quizData?.sessionCode) return;
-              console.log("QuizPresentation: Quiz completed, showing results");
-              await quizService.updateQuiz(quizData.sessionCode, {
-                isComplete: true,
-                showResults: true,
-                isActive: false,
+              console.log("QuizPresentation: Show Results button clicked");
+              console.log("QuizPresentation: Current state before update:", {
+                isComplete: quizData.isComplete,
+                isQuizComplete: isQuizComplete,
+                currentQuestionIndex: quizData.currentQuestionIndex,
+                totalQuestions: quizData.questions.length,
               });
-              // Update local state immediately to trigger re-render
-              updateQuizData({ isComplete: true });
-              if (onQuizComplete) {
-                onQuizComplete();
+
+              // Immediately set local completion state to trigger re-render
+              setIsQuizComplete(true);
+              console.log("QuizPresentation: isQuizComplete set to true");
+
+              try {
+                await quizService.updateQuiz(quizData.sessionCode, {
+                  isComplete: true,
+                  showResults: true,
+                  isActive: false,
+                });
+                console.log("QuizPresentation: Firebase updated successfully");
+
+                // Also update the main quiz data
+                updateQuizData({ isComplete: true });
+                console.log("QuizPresentation: Local quizData updated");
+
+                if (onQuizComplete) {
+                  onQuizComplete();
+                }
+              } catch (error) {
+                console.error("Error updating quiz completion:", error);
+                // Revert local state if Firebase update fails
+                setIsQuizComplete(false);
               }
             }}
             className="text-green-600 text-lg font-medium cursor-pointer hover:text-green-800 transition-colors px-4 py-2 bg-white/80 rounded-lg shadow-sm"

@@ -416,7 +416,7 @@ const QuizVotingPage: React.FC = () => {
     // Calculate participant position
     let position = "N/A";
     let positionEmoji = "🏆";
-    
+
     if (participant && quizData.participants) {
       const leaderboard = Object.entries(quizData.participants)
         .map(([_id, p]) => ({
@@ -424,12 +424,14 @@ const QuizVotingPage: React.FC = () => {
           totalScore: p.totalScore,
         }))
         .sort((a, b) => b.totalScore - a.totalScore);
-      
-      const participantIndex = leaderboard.findIndex(p => p.username === participant.username);
+
+      const participantIndex = leaderboard.findIndex(
+        (p) => p.username === participant.username,
+      );
       if (participantIndex !== -1) {
         const actualPosition = participantIndex + 1;
         position = actualPosition.toString();
-        
+
         // Set position emoji
         if (actualPosition === 1) {
           positionEmoji = "🥇";
@@ -462,7 +464,7 @@ const QuizVotingPage: React.FC = () => {
                 {participant ? participant.totalScore : 0}
               </div>
               <div className="text-sm text-deep-sea/60">points</div>
-              
+
               {/* Position Display */}
               <div className="mt-4 pt-4 border-t border-dark-royalty/10">
                 <h3 className="text-lg font-bold text-dark-royalty mb-2">
@@ -472,7 +474,14 @@ const QuizVotingPage: React.FC = () => {
                   {position}
                 </div>
                 <div className="text-sm text-deep-sea/60">
-                  {position === "1" ? "st" : position === "2" ? "nd" : position === "3" ? "rd" : "th"} place
+                  {position === "1"
+                    ? "st"
+                    : position === "2"
+                      ? "nd"
+                      : position === "3"
+                        ? "rd"
+                        : "th"}{" "}
+                  place
                 </div>
               </div>
             </div>
