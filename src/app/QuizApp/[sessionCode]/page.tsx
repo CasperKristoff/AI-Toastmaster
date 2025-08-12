@@ -588,9 +588,7 @@ const QuizVotingPage: React.FC = () => {
                       }`}
                       style={{ backgroundColor: option.color }}
                     >
-                      <div className="text-white text-center font-bold text-2xl px-4">
-                        {option.text}
-                      </div>
+                      {/* Only show color, no text */}
                       {selectedOption === option.id && (
                         <div className="absolute top-2 right-2 w-6 h-6 bg-white rounded-full flex items-center justify-center">
                           <div className="w-3 h-3 bg-dark-royalty rounded-full"></div>

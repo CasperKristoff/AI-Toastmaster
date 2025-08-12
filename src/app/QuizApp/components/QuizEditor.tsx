@@ -999,7 +999,7 @@ export default function QuizEditor({
                             </div>
                           )}
 
-                          {/* Option Text - Presentation style */}
+                          {/* Option Text - Presentation style with responsive sizing */}
                           <div
                             contentEditable
                             suppressContentEditableWarning={true}
@@ -1013,7 +1013,13 @@ export default function QuizEditor({
                               );
                             }}
                             onClick={(e) => e.stopPropagation()}
-                            className="text-white text-center font-bold text-2xl focus:outline-none cursor-text px-8 w-full"
+                            className={`text-white text-center font-bold focus:outline-none cursor-text px-8 w-full ${
+                              option.text.length > 50
+                                ? "text-lg"
+                                : option.text.length > 30
+                                  ? "text-xl"
+                                  : "text-2xl"
+                            }`}
                             style={{ minHeight: "1.5rem" }}
                           >
                             {option.text}

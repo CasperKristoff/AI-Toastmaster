@@ -743,8 +743,16 @@ function QuizPresentation({
                     </div>
                   )}
 
-                  {/* Option Text */}
-                  <div className="text-white text-center font-bold text-2xl px-8 w-full">
+                  {/* Option Text - Responsive sizing based on text length */}
+                  <div
+                    className={`text-white text-center font-bold px-8 w-full ${
+                      option.text.length > 50
+                        ? "text-lg"
+                        : option.text.length > 30
+                          ? "text-xl"
+                          : "text-2xl"
+                    }`}
+                  >
                     {option.text}
                   </div>
 
