@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { EventSegment, Event } from "../../../types/event";
 import { eventService } from "../../../services/eventService";
+import QuizAI from "./QuizAI";
 // Server-side upload endpoint avoids App Check/CORS in local dev
 
 interface QuizQuestion {
@@ -361,6 +362,24 @@ export default function QuizEditor({
     });
   };
 
+  const handleAIQuestionsGenerated = (aiQuestions: QuizQuestion[]) => {
+    console.log("QuizEditor: AI generated questions:", aiQuestions);
+
+    const newQuestions = [...quizData.questions, ...aiQuestions];
+    const newQuestionIndex = newQuestions.length - aiQuestions.length; // Switch to first AI-generated question
+
+    console.log(
+      "QuizEditor: Added AI questions. New total:",
+      newQuestions.length,
+    );
+    console.log("QuizEditor: Switching to question index:", newQuestionIndex);
+
+    updateQuizData({
+      questions: newQuestions,
+      currentQuestionIndex: newQuestionIndex,
+    });
+  };
+
   const removeQuestion = (index: number) => {
     const newQuestions = quizData.questions.filter((_, i) => i !== index);
     let newCurrentIndex = quizData.currentQuestionIndex;
@@ -502,6 +521,9 @@ export default function QuizEditor({
   );
   const currentQuestion = quizData.questions[validIndex];
 
+  // Ref for the question textarea to handle auto-resize
+  const questionTextareaRef = useRef<HTMLTextAreaElement>(null);
+
   // Sync the index if it was corrected
   useEffect(() => {
     if (
@@ -516,6 +538,15 @@ export default function QuizEditor({
     quizData.questions.length,
     updateQuizData,
   ]);
+
+  // Auto-resize question textarea when question changes
+  useEffect(() => {
+    if (questionTextareaRef.current) {
+      const textarea = questionTextareaRef.current;
+      textarea.style.height = "auto";
+      textarea.style.height = Math.max(64, textarea.scrollHeight) + "px";
+    }
+  }, [currentQuestion.question, quizData.currentQuestionIndex]);
 
   // Debug logging
   console.log("QuizEditor: Safety check - quizData:", quizData);
@@ -589,7 +620,7 @@ export default function QuizEditor({
           background: transparent;
         }
       `}</style>
-      <div className="flex h-[85vh] relative overflow-hidden bg-white rounded-2xl shadow-2xl">
+      <div className="flex h-[90vh] relative overflow-hidden bg-white rounded-2xl shadow-2xl flex-col">
         {/* Exit Button - Top Right */}
         <button
           onClick={() => (onClose ? onClose() : window.history.back())}
@@ -607,377 +638,415 @@ export default function QuizEditor({
           </svg>
         </button>
 
-        {/* Left Sidebar - Question Navigation with Custom Scrolling */}
-        <div className="w-64 bg-white/90 backdrop-blur-xl border-r border-dark-royalty/10 flex flex-col h-full overflow-hidden flex-shrink-0">
-          {/* Quiz Settings Header - Fixed */}
-          <div className="flex-shrink-0 p-4 border-b border-dark-royalty/10 bg-white/95">
-            <h3 className="text-xl font-bold text-dark-royalty mb-4">
-              Quiz Settings
-            </h3>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-deep-sea/70 mb-1">
-                  Quiz Title
-                </label>
-                <input
-                  type="text"
-                  value={segmentTitle}
-                  onChange={(e) => setSegmentTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-dark-royalty/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-deep-sea/70 mb-1">
-                  Time Limit (seconds)
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={String(currentQuestion.timeLimit ?? "")}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    const newQuestions = [...quizData.questions];
-                    // Allow empty field while editing; default to empty
-                    if (raw === "") {
-                      newQuestions[quizData.currentQuestionIndex].timeLimit = 0;
-                    } else if (/^\d+$/.test(raw)) {
-                      newQuestions[quizData.currentQuestionIndex].timeLimit =
-                        parseInt(raw, 10);
-                    }
-                    updateQuizData({ questions: newQuestions });
-                  }}
-                  onBlur={(e) => {
-                    const raw = e.target.value;
-                    const newQuestions = [...quizData.questions];
-                    if (raw === "" || isNaN(Number(raw))) {
-                      newQuestions[quizData.currentQuestionIndex].timeLimit =
-                        30; // fallback
+        {/* AI Assistant - Very Top of Popup */}
+        <div className="flex-shrink-0 w-full px-6 pt-4 pb-3 border-b border-gray-100">
+          <QuizAI
+            existingQuestions={quizData.questions}
+            onQuestionsGenerated={handleAIQuestionsGenerated}
+            quizTitle={segmentTitle}
+          />
+        </div>
+
+        {/* Main Content Row */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Left Sidebar - Question Navigation with Custom Scrolling */}
+          <div className="w-64 bg-white/90 backdrop-blur-xl border-r border-dark-royalty/10 flex flex-col h-full overflow-hidden flex-shrink-0">
+            {/* Quiz Settings Header - Fixed */}
+            <div className="flex-shrink-0 p-4 border-b border-dark-royalty/10 bg-white/95">
+              <h3 className="text-xl font-bold text-dark-royalty mb-4">
+                Quiz Settings
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-deep-sea/70 mb-1">
+                    Quiz Title
+                  </label>
+                  <input
+                    type="text"
+                    value={segmentTitle}
+                    onChange={(e) => setSegmentTitle(e.target.value)}
+                    className="w-full px-3 py-2 border border-dark-royalty/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-deep-sea/70 mb-1">
+                    Time Limit (seconds)
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={String(currentQuestion.timeLimit ?? "")}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      const newQuestions = [...quizData.questions];
+                      // Allow empty field while editing; default to empty
+                      if (raw === "") {
+                        newQuestions[quizData.currentQuestionIndex].timeLimit =
+                          0;
+                      } else if (/^\d+$/.test(raw)) {
+                        newQuestions[quizData.currentQuestionIndex].timeLimit =
+                          parseInt(raw, 10);
+                      }
                       updateQuizData({ questions: newQuestions });
-                    }
-                  }}
-                  placeholder="e.g. 30"
-                  className="w-full px-3 py-2 border border-dark-royalty/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-deep-sea/70 mb-1">
-                  Point Type
-                </label>
-                <select
-                  value={currentQuestion.pointType}
-                  onChange={(e) => {
-                    const newQuestions = [...quizData.questions];
-                    newQuestions[quizData.currentQuestionIndex].pointType = e
-                      .target.value as "standard" | "double" | "none";
-                    updateQuizData({ questions: newQuestions });
-                  }}
-                  className="w-full px-3 py-2 border border-dark-royalty/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 text-sm"
-                >
-                  <option value="standard">Standard</option>
-                  <option value="double">Double Points</option>
-                  <option value="none">No Points</option>
-                </select>
+                    }}
+                    onBlur={(e) => {
+                      const raw = e.target.value;
+                      const newQuestions = [...quizData.questions];
+                      if (raw === "" || isNaN(Number(raw))) {
+                        newQuestions[quizData.currentQuestionIndex].timeLimit =
+                          30; // fallback
+                        updateQuizData({ questions: newQuestions });
+                      }
+                    }}
+                    placeholder="e.g. 30"
+                    className="w-full px-3 py-2 border border-dark-royalty/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-deep-sea/70 mb-1">
+                    Point Type
+                  </label>
+                  <select
+                    value={currentQuestion.pointType}
+                    onChange={(e) => {
+                      const newQuestions = [...quizData.questions];
+                      newQuestions[quizData.currentQuestionIndex].pointType = e
+                        .target.value as "standard" | "double" | "none";
+                      updateQuizData({ questions: newQuestions });
+                    }}
+                    className="w-full px-3 py-2 border border-dark-royalty/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 text-sm"
+                  >
+                    <option value="standard">Standard</option>
+                    <option value="double">Double Points</option>
+                    <option value="none">No Points</option>
+                  </select>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Questions List Header */}
-          <div className="flex-shrink-0 px-4 py-3 border-b border-dark-royalty/10">
-            <h4 className="text-lg font-bold text-dark-royalty">
-              Questions ({quizData.questions.length})
-            </h4>
-          </div>
+            {/* Questions List Header */}
+            <div className="flex-shrink-0 px-4 py-3 border-b border-dark-royalty/10">
+              <h4 className="text-lg font-bold text-dark-royalty">
+                Questions ({quizData.questions.length})
+              </h4>
+            </div>
 
-          {/* Scrollable Questions List */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar">
-            <div className="p-4">
-              <div className="space-y-3">
-                {quizData.questions.map((question, index) => (
-                  <div
-                    key={question.id}
-                    onClick={() => switchToQuestion(index)}
-                    className={`
+            {/* Scrollable Questions List */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+              <div className="p-4">
+                <div className="space-y-3">
+                  {quizData.questions.map((question, index) => (
+                    <div
+                      key={question.id}
+                      onClick={() => switchToQuestion(index)}
+                      className={`
                     relative rounded-lg cursor-pointer transition-all duration-200 overflow-hidden ${
                       index === quizData.currentQuestionIndex
                         ? "ring-2 ring-dark-royalty shadow-lg"
                         : "hover:shadow-md"
                     }
                   `}
-                  >
-                    {/* Mini Preview Window */}
-                    <div className="bg-white border border-dark-royalty/10 rounded-lg p-3">
-                      {/* Question Number Header */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          <div className="w-5 h-5 bg-dark-royalty text-white text-xs rounded-full flex items-center justify-center font-bold">
-                            {index + 1}
-                          </div>
-                          <span className="text-xs font-medium text-dark-royalty">
-                            Quiz
-                          </span>
-                        </div>
-                        {quizData.questions.length > 1 && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeQuestion(index);
-                            }}
-                            className="text-red-400 hover:text-red-500 text-xs w-4 h-4 rounded-full bg-red-50 flex items-center justify-center"
-                          >
-                            ×
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Mini Question Text */}
-                      <div className="text-xs text-gray-600 mb-2 line-clamp-1 bg-gray-50 rounded px-2 py-1">
-                        {question.question || "Empty question"}
-                      </div>
-
-                      {/* Mini Media Preview */}
-                      {question.media && (
-                        <div className="mb-2">
-                          <div className="w-full h-6 bg-gray-200 rounded flex items-center justify-center">
-                            <span className="text-xs text-gray-500">📷</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Mini Answer Options Grid */}
-                      <div
-                        className={`grid ${
-                          question.options.length === 2
-                            ? "grid-cols-2 gap-1"
-                            : "grid-cols-2 gap-0.5"
-                        }`}
-                      >
-                        {question.options.map((option, _optionIndex) => (
-                          <div
-                            key={option.id}
-                            className={`rounded text-xs flex items-center justify-center text-white font-medium ${
-                              question.options.length === 2
-                                ? "h-10 px-1"
-                                : "h-6 px-0.5"
-                            } ${
-                              option.isCorrect ? "ring-1 ring-green-400" : ""
-                            }`}
-                            style={{ backgroundColor: option.color }}
-                          >
-                            <span
-                              className="truncate text-center"
-                              style={{ fontSize: "10px" }}
-                            >
-                              {option.text || "Empty"}
-                            </span>
-                            {option.isCorrect && (
-                              <span
-                                className="ml-0.5 text-green-300"
-                                style={{ fontSize: "8px" }}
-                              >
-                                ✓
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Time and Points Info */}
-                      <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
-                        <span>{question.timeLimit}s</span>
-                        <span>{question.pointType}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Bottom padding for better scrolling */}
-              <div className="h-4"></div>
-            </div>
-          </div>
-
-          {/* Fixed Add Question Button at Bottom */}
-          <div className="flex-shrink-0 p-4 border-t border-dark-royalty/10 bg-white/95">
-            <button
-              onClick={addQuestion}
-              className="w-full px-4 py-3 bg-dark-royalty text-white rounded-lg hover:bg-dark-royalty/90 transition-all text-sm font-medium shadow-sm flex items-center justify-center space-x-2"
-            >
-              <span className="text-lg">+</span>
-              <span>Add Question</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Main Content Area - Fixed Position, No Scrolling */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
-          {/* Question Editor - Presentation Preview Style */}
-          <div className="flex-1 p-6 overflow-hidden">
-            <div className="h-full flex flex-col items-center justify-start space-y-6">
-              {/* Question Text - Matching presentation size and style */}
-              <div className="w-full">
-                <input
-                  type="text"
-                  value={currentQuestion.question}
-                  onChange={(e) => {
-                    const newQuestions = [...quizData.questions];
-                    newQuestions[quizData.currentQuestionIndex].question =
-                      e.target.value;
-                    updateQuizData({ questions: newQuestions });
-                  }}
-                  placeholder="Enter your question here..."
-                  className="w-full px-6 py-4 border border-dark-royalty/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 focus:border-transparent transition-all duration-300 text-4xl font-bold text-black text-center leading-tight"
-                  style={{ minHeight: "4rem" }}
-                />
-              </div>
-
-              {/* Media Upload - Compact preview for editor */}
-              <div className="w-full">
-                {currentQuestion.media ? (
-                  <div className="flex justify-center">
-                    <div className="relative">
-                      {currentQuestion.media.type === "image" ? (
-                        <Image
-                          src={currentQuestion.media.url}
-                          alt="Question media"
-                          width={400}
-                          height={250}
-                          className="rounded-2xl shadow-lg object-cover max-w-full h-auto"
-                        />
-                      ) : (
-                        <video
-                          src={currentQuestion.media.url}
-                          className="rounded-2xl shadow-lg max-w-lg max-h-48 object-cover"
-                          controls
-                        />
-                      )}
-                      <button
-                        onClick={() =>
-                          removeMedia(quizData.currentQuestionIndex)
-                        }
-                        className="absolute top-2 right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="relative border-2 border-dashed border-dark-royalty/20 rounded-xl p-8 text-center bg-white/30 hover:bg-white/40 transition-colors cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*,video/*"
-                      onChange={handleFileInputChange}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                    <div className="flex flex-col items-center space-y-2">
-                      <div className="w-16 h-16 bg-dark-royalty/10 rounded-full flex items-center justify-center">
-                        <span className="text-3xl text-dark-royalty font-bold">
-                          +
-                        </span>
-                      </div>
-                      <p className="text-sm text-deep-sea/60">
-                        Upload a picture or video by clicking here
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Answer Options - Presentation-sized grid */}
-              <div className="w-full flex-grow">
-                <div className="flex justify-between items-center mb-4">
-                  <button
-                    onClick={() =>
-                      toggleOptionCount(quizData.currentQuestionIndex)
-                    }
-                    className="text-dark-royalty hover:text-dark-royalty/80 transition-colors text-sm font-medium underline"
-                  >
-                    {currentQuestion.options.length === 2
-                      ? "Change to 4 Alternatives"
-                      : "Change to 2 Alternatives"}
-                  </button>
-                </div>
-
-                {/* Presentation-style Answer Grid - Dynamic sizing */}
-                <div
-                  className={`grid max-w-7xl mx-auto ${
-                    currentQuestion.options.length === 2
-                      ? "grid-cols-2 gap-6"
-                      : "grid-cols-2 gap-4"
-                  }`}
-                >
-                  {currentQuestion.options.map((option, optionIndex) => (
-                    <div
-                      key={option.id}
-                      className={`relative group rounded-3xl shadow-2xl cursor-pointer transition-all duration-300 flex items-center justify-center ${
-                        currentQuestion.options.length === 2
-                          ? "min-h-[388px]"
-                          : "min-h-[180px]"
-                      } ${
-                        option.isCorrect
-                          ? "ring-4 ring-green-400"
-                          : "hover:shadow-xl"
-                      }`}
-                      style={{ backgroundColor: option.color }}
-                      onClick={() =>
-                        setCorrectAnswer(
-                          quizData.currentQuestionIndex,
-                          optionIndex,
-                        )
-                      }
                     >
-                      {/* Correct Answer Indicator */}
-                      {option.isCorrect && (
-                        <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg">
-                          ✓
+                      {/* Mini Preview Window */}
+                      <div className="bg-white border border-dark-royalty/10 rounded-lg p-3">
+                        {/* Question Number Header */}
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-5 h-5 bg-dark-royalty text-white text-xs rounded-full flex items-center justify-center font-bold">
+                              {index + 1}
+                            </div>
+                            <span className="text-xs font-medium text-dark-royalty">
+                              Quiz
+                            </span>
+                          </div>
+                          {quizData.questions.length > 1 && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeQuestion(index);
+                              }}
+                              className="text-red-400 hover:text-red-500 text-xs w-4 h-4 rounded-full bg-red-50 flex items-center justify-center"
+                            >
+                              ×
+                            </button>
+                          )}
                         </div>
-                      )}
 
-                      {/* Option Text - Presentation style */}
-                      <div
-                        contentEditable
-                        suppressContentEditableWarning={true}
-                        onBlur={(e) => {
-                          const newText = e.currentTarget.textContent || "";
-                          updateOption(
-                            quizData.currentQuestionIndex,
-                            optionIndex,
-                            "text",
-                            newText,
-                          );
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-white text-center font-bold text-2xl focus:outline-none cursor-text px-8 w-full"
-                        style={{ minHeight: "1.5rem" }}
-                      >
-                        {option.text}
+                        {/* Mini Question Text */}
+                        <div className="text-xs text-gray-600 mb-2 line-clamp-1 bg-gray-50 rounded px-2 py-1">
+                          {question.question || "Empty question"}
+                        </div>
+
+                        {/* Mini Media Preview */}
+                        {question.media && (
+                          <div className="mb-2">
+                            <div className="w-full h-6 bg-gray-200 rounded flex items-center justify-center">
+                              <span className="text-xs text-gray-500">📷</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Mini Answer Options Grid */}
+                        <div
+                          className={`grid ${
+                            question.options.length === 2
+                              ? "grid-cols-2 gap-1"
+                              : "grid-cols-2 gap-0.5"
+                          }`}
+                        >
+                          {question.options.map((option, _optionIndex) => (
+                            <div
+                              key={option.id}
+                              className={`rounded text-xs flex items-center justify-center text-white font-medium ${
+                                question.options.length === 2
+                                  ? "h-10 px-1"
+                                  : "h-6 px-0.5"
+                              } ${
+                                option.isCorrect ? "ring-1 ring-green-400" : ""
+                              }`}
+                              style={{ backgroundColor: option.color }}
+                            >
+                              <span
+                                className="truncate text-center"
+                                style={{ fontSize: "10px" }}
+                              >
+                                {option.text || "Empty"}
+                              </span>
+                              {option.isCorrect && (
+                                <span
+                                  className="ml-0.5 text-green-300"
+                                  style={{ fontSize: "8px" }}
+                                >
+                                  ✓
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Time and Points Info */}
+                        <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
+                          <span>{question.timeLimit}s</span>
+                          <span>{question.pointType}</span>
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <p className="text-xs text-deep-sea/60 mt-4 text-center">
-                  Click on an answer to mark it as correct
-                </p>
+                {/* Bottom padding for better scrolling */}
+                <div className="h-4"></div>
               </div>
+            </div>
+
+            {/* Fixed Add Question Button at Bottom */}
+            <div className="flex-shrink-0 p-4 border-t border-dark-royalty/10 bg-white/95">
+              <button
+                onClick={addQuestion}
+                className="w-full px-4 py-3 bg-dark-royalty text-white rounded-lg hover:bg-dark-royalty/90 transition-all text-sm font-medium shadow-sm flex items-center justify-center space-x-2"
+              >
+                <span className="text-lg">+</span>
+                <span>Add Question</span>
+              </button>
             </div>
           </div>
 
-          {/* Fixed Save Button Area at Bottom */}
-          <div className="flex-shrink-0">
-            <div className="flex justify-end p-4">
-              <button
-                onClick={handleSave}
-                className="px-6 py-3 bg-dark-royalty text-white rounded-lg shadow-md hover:bg-dark-royalty/90 transition-all text-sm font-semibold"
-              >
-                {(() => {
-                  const existsInEvent = Array.isArray(_event?.timeline)
-                    ? _event.timeline.some((s) => s?.id === segment.id)
-                    : false;
-                  return existsInEvent
-                    ? "Save Changes"
-                    : "Save Quiz to Event Program";
-                })()}
-              </button>
+          {/* Main Content Area - Fixed Position, No Scrolling */}
+          <div className="flex-1 flex flex-col h-full overflow-hidden">
+            {/* Question Editor - Presentation Preview Style */}
+            <div className="flex-1 p-6 overflow-hidden">
+              <div className="h-full flex flex-col">
+                {/* Question Text - Dynamic height section */}
+                <div className="flex-shrink-0 w-full mb-6">
+                  <textarea
+                    ref={questionTextareaRef}
+                    value={currentQuestion.question}
+                    onChange={(e) => {
+                      const newQuestions = [...quizData.questions];
+                      newQuestions[quizData.currentQuestionIndex].question =
+                        e.target.value;
+                      updateQuizData({ questions: newQuestions });
+                    }}
+                    placeholder="Enter your question here..."
+                    className="w-full px-6 py-4 border border-dark-royalty/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-dark-royalty/50 focus:border-transparent transition-all duration-300 text-4xl font-bold text-black text-center leading-tight resize-none overflow-hidden"
+                    style={{
+                      minHeight: "4rem",
+                      height: "auto",
+                    }}
+                    onInput={(e) => {
+                      // Auto-resize textarea based on content
+                      const target = e.target as HTMLTextAreaElement;
+                      target.style.height = "auto";
+                      target.style.height =
+                        Math.max(64, target.scrollHeight) + "px"; // 64px = 4rem minimum
+                    }}
+                    rows={1}
+                  />
+                </div>
+
+                {/* Media Upload - Fixed height section to maintain consistent spacing */}
+                <div
+                  className="flex-shrink-0 w-full mb-6"
+                  style={{ minHeight: "280px" }}
+                >
+                  {currentQuestion.media ? (
+                    <div className="flex justify-center items-center h-full">
+                      <div className="relative">
+                        {currentQuestion.media.type === "image" ? (
+                          <Image
+                            src={currentQuestion.media.url}
+                            alt="Question media"
+                            width={400}
+                            height={250}
+                            className="rounded-2xl shadow-lg object-cover max-w-full max-h-[250px]"
+                          />
+                        ) : (
+                          <video
+                            src={currentQuestion.media.url}
+                            className="rounded-2xl shadow-lg max-w-lg max-h-[250px] object-cover"
+                            controls
+                          />
+                        )}
+                        <button
+                          onClick={() =>
+                            removeMedia(quizData.currentQuestionIndex)
+                          }
+                          className="absolute top-2 right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex justify-center items-center h-full">
+                      <div className="relative border-2 border-dashed border-dark-royalty/20 rounded-xl p-8 text-center bg-white/30 hover:bg-white/40 transition-colors cursor-pointer w-full max-w-lg">
+                        <input
+                          type="file"
+                          accept="image/*,video/*"
+                          onChange={handleFileInputChange}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        <div className="flex flex-col items-center space-y-2">
+                          <div className="w-16 h-16 bg-dark-royalty/10 rounded-full flex items-center justify-center">
+                            <span className="text-3xl text-dark-royalty font-bold">
+                              +
+                            </span>
+                          </div>
+                          <p className="text-sm text-deep-sea/60">
+                            Upload a picture or video by clicking here
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Answer Options - Fixed height section with consistent sizing */}
+                <div className="flex-1 w-full min-h-0">
+                  <div className="flex justify-between items-center mb-4">
+                    <button
+                      onClick={() =>
+                        toggleOptionCount(quizData.currentQuestionIndex)
+                      }
+                      className="text-dark-royalty hover:text-dark-royalty/80 transition-colors text-sm font-medium underline"
+                    >
+                      {currentQuestion.options.length === 2
+                        ? "Change to 4 Alternatives"
+                        : "Change to 2 Alternatives"}
+                    </button>
+                  </div>
+
+                  {/* Answer Grid - Reduced height to prevent cutoff */}
+                  <div className="h-full max-h-[280px]">
+                    <div
+                      className={`grid max-w-7xl mx-auto h-full ${
+                        currentQuestion.options.length === 2
+                          ? "grid-cols-2 gap-4"
+                          : "grid-cols-2 gap-3"
+                      }`}
+                    >
+                      {currentQuestion.options.map((option, optionIndex) => (
+                        <div
+                          key={option.id}
+                          className={`relative group rounded-3xl shadow-2xl cursor-pointer transition-all duration-300 flex items-center justify-center ${
+                            currentQuestion.options.length === 2
+                              ? "h-full" // Use full height for 2 options
+                              : "h-full" // Use full height for 4 options (grid handles distribution)
+                          } ${
+                            option.isCorrect
+                              ? "ring-4 ring-green-400"
+                              : "hover:shadow-xl"
+                          }`}
+                          style={{
+                            backgroundColor: option.color,
+                            // Reduced minimum heights to prevent cutoff
+                            minHeight:
+                              currentQuestion.options.length === 2
+                                ? "120px"
+                                : "60px",
+                          }}
+                          onClick={() =>
+                            setCorrectAnswer(
+                              quizData.currentQuestionIndex,
+                              optionIndex,
+                            )
+                          }
+                        >
+                          {/* Correct Answer Indicator */}
+                          {option.isCorrect && (
+                            <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg">
+                              ✓
+                            </div>
+                          )}
+
+                          {/* Option Text - Presentation style */}
+                          <div
+                            contentEditable
+                            suppressContentEditableWarning={true}
+                            onBlur={(e) => {
+                              const newText = e.currentTarget.textContent || "";
+                              updateOption(
+                                quizData.currentQuestionIndex,
+                                optionIndex,
+                                "text",
+                                newText,
+                              );
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-white text-center font-bold text-2xl focus:outline-none cursor-text px-8 w-full"
+                            style={{ minHeight: "1.5rem" }}
+                          >
+                            {option.text}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-deep-sea/60 mt-4 text-center">
+                    Click on an answer to mark it as correct
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Fixed Save Button Area at Bottom */}
+            <div className="flex-shrink-0">
+              <div className="flex justify-end p-4">
+                <button
+                  onClick={handleSave}
+                  className="px-6 py-3 bg-dark-royalty text-white rounded-lg shadow-md hover:bg-dark-royalty/90 transition-all text-sm font-semibold"
+                >
+                  {(() => {
+                    const existsInEvent = Array.isArray(_event?.timeline)
+                      ? _event.timeline.some((s) => s?.id === segment.id)
+                      : false;
+                    return existsInEvent
+                      ? "Save Changes"
+                      : "Save Quiz to Event Program";
+                  })()}
+                </button>
+              </div>
             </div>
           </div>
         </div>

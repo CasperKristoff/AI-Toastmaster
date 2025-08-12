@@ -273,7 +273,7 @@ export function useEventHandlers({
         setShowJeopardyEditModal(true);
       } else if (segment.type === "quiz") {
         // Navigate to quiz editor page (match by type, not title, so renaming still works)
-        const quizUrl = `/Quiz?eventId=${event.id}&segmentId=${segment.id}`;
+        const quizUrl = `/QuizApp?eventId=${event.id}&segmentId=${segment.id}`;
         if (onNavigate) {
           onNavigate(quizUrl);
         } else {

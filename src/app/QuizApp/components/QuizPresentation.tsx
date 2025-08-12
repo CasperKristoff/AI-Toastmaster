@@ -195,7 +195,7 @@ function QuizPresentation({
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [liveQuizData, setLiveQuizData] = useState<QuizData | null>(null);
   const [isQuizInitialized, setIsQuizInitialized] = useState(false);
-  
+
   // SIMPLIFIED: Single state to control QuizResults rendering
   const [shouldShowQuizResults, setShouldShowQuizResults] = useState(false);
 
@@ -278,7 +278,7 @@ function QuizPresentation({
         isComplete: false,
       };
       setQuizData(initializedData);
-      
+
       // Reset QuizResults state
       setShouldShowQuizResults(false);
 
@@ -328,7 +328,7 @@ function QuizPresentation({
                     showResults: updatedQuiz.showResults,
                     isComplete: updatedQuiz.isComplete,
                   }));
-                  
+
                   // Don't sync QuizResults state with Firebase isComplete
                   // QuizResults should only show when explicitly requested via showFinalResults
                   // This prevents mobile page from triggering completion state
@@ -348,10 +348,10 @@ function QuizPresentation({
   // SIMPLIFIED: Toggle results for current question only
   const toggleResults = useCallback(async () => {
     if (!quizData?.sessionCode) return;
-    
+
     const newShowResults = !quizData.showResults;
     console.log("QuizPresentation: Toggling results to:", newShowResults);
-    
+
     // Update local state immediately
     updateQuizData({ showResults: newShowResults });
 
@@ -402,7 +402,8 @@ function QuizPresentation({
 
   // Auto-show results when all participants have answered
   useEffect(() => {
-    if (!currentQuestion || !liveQuizData?.participants || quizData.showResults) return;
+    if (!currentQuestion || !liveQuizData?.participants || quizData.showResults)
+      return;
 
     const currentQuestionId = currentQuestion.id;
     const participants = liveQuizData.participants;
@@ -429,7 +430,12 @@ function QuizPresentation({
       );
       toggleResults();
     }
-  }, [currentQuestion, liveQuizData?.participants, quizData.showResults, toggleResults]);
+  }, [
+    currentQuestion,
+    liveQuizData?.participants,
+    quizData.showResults,
+    toggleResults,
+  ]);
 
   const goToNextQuestion = useCallback(async () => {
     if (!quizData?.sessionCode) return;
@@ -440,7 +446,9 @@ function QuizPresentation({
     );
 
     if (nextIndex >= quizData.questions.length) {
-      console.log("QuizPresentation: Reached last question - don't auto-complete");
+      console.log(
+        "QuizPresentation: Reached last question - don't auto-complete",
+      );
       // Don't auto-complete the quiz when reaching the last question
       // Let the user explicitly click "Show Results" to see QuizResults
       if (onQuizComplete) {
@@ -459,9 +467,9 @@ function QuizPresentation({
       });
 
       // Update local state
-      updateQuizData({ 
+      updateQuizData({
         currentQuestionIndex: nextIndex,
-        showResults: false 
+        showResults: false,
       });
     }
   }, [
@@ -475,13 +483,13 @@ function QuizPresentation({
   // SIMPLIFIED: Show QuizResults function
   const showFinalResults = useCallback(async () => {
     if (!quizData?.sessionCode) return;
-    
+
     console.log("QuizPresentation: Show Final Results clicked");
     console.log("QuizPresentation: Setting shouldShowQuizResults to true");
-    
+
     // IMMEDIATELY show QuizResults
     setShouldShowQuizResults(true);
-    
+
     try {
       // Update Firebase in background - DON'T set isComplete to true
       // This prevents mobile page from showing its completion screen
@@ -490,13 +498,13 @@ function QuizPresentation({
         isActive: false,
         // isComplete: false - Keep quiz active so mobile doesn't show completion
       });
-      
+
       // DON'T update local quiz data with isComplete: true
       // This prevents any interference with QuizResults rendering
-      
+
       // DON'T call onQuizComplete() - this triggers the presentation page
       // to show "Quiz Complete" overlay which covers QuizResults.tsx
-      
+
       console.log("QuizPresentation: Final results shown successfully");
     } catch (error) {
       console.error("Error showing final results:", error);
@@ -528,7 +536,15 @@ function QuizPresentation({
 
     document.addEventListener("keydown", handleKeyPress);
     return () => document.removeEventListener("keydown", handleKeyPress);
-  }, [currentQuestion, quizData.showResults, goToNextQuestion, toggleResults, quizData.currentQuestionIndex, quizData.questions.length, showFinalResults]);
+  }, [
+    currentQuestion,
+    quizData.showResults,
+    goToNextQuestion,
+    toggleResults,
+    quizData.currentQuestionIndex,
+    quizData.questions.length,
+    showFinalResults,
+  ]);
 
   // Debug logging
   console.log("QuizPresentation: Current quiz state:", {
@@ -561,9 +577,14 @@ function QuizPresentation({
   // ROBUST: Show QuizResults when this state is true
   if (shouldShowQuizResults) {
     console.log("QuizPresentation: RENDERING QuizResults component");
-    console.log("QuizPresentation: shouldShowQuizResults:", shouldShowQuizResults);
-    console.log("QuizPresentation: This will override ANY other rendering logic");
-    
+    console.log(
+      "QuizPresentation: shouldShowQuizResults:",
+      shouldShowQuizResults,
+    );
+    console.log(
+      "QuizPresentation: This will override ANY other rendering logic",
+    );
+
     // This return statement takes absolute priority over everything else
     // No other code can execute after this return
     return (
@@ -678,7 +699,11 @@ function QuizPresentation({
             {currentQuestion.options.map((option) => {
               // Calculate stats from live quiz data
               let stats = null;
-              if (liveQuizData && quizData.showResults && liveQuizData.participants) {
+              if (
+                liveQuizData &&
+                quizData.showResults &&
+                liveQuizData.participants
+              ) {
                 // Count responses for this option by checking participant responses
                 const totalResponses = Object.values(
                   liveQuizData.participants,

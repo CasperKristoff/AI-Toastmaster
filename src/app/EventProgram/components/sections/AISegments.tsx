@@ -130,7 +130,7 @@ const AISegments: React.FC<AISegmentsProps> = ({
         const segmentId = `quiz_${Date.now()}`;
 
         // Create URL with parameters to create the segment in the Quiz page
-        const quizUrl = `/Quiz?eventId=${event.id}&createSegment=true&segmentId=${segmentId}&title=Live Quiz&type=quiz`;
+        const quizUrl = `/QuizApp?eventId=${event.id}&createSegment=true&segmentId=${segmentId}&title=Live Quiz&type=quiz`;
 
         console.log(
           "Navigating immediately to avoid state conflicts:",

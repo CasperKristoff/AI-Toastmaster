@@ -412,7 +412,10 @@ const QuizVotingPage: React.FC = () => {
   }
 
   // Check if we're on the last question and should show QuizResults
-  if (quizData.currentQuestionIndex + 1 >= quizData.questions.length && quizData.showResults) {
+  if (
+    quizData.currentQuestionIndex + 1 >= quizData.questions.length &&
+    quizData.showResults
+  ) {
     // Show a message that results are being displayed on the host side
     return (
       <div className="min-h-screen bg-gradient-to-br from-dark-royalty/10 via-deep-sea/5 to-kimchi/10 p-4">
@@ -430,7 +433,8 @@ const QuizVotingPage: React.FC = () => {
                 Final Results
               </h2>
               <div className="text-lg text-deep-sea/70 mb-4">
-                The host is now showing the final results with the podium and top 3 players!
+                The host is now showing the final results with the podium and
+                top 3 players!
               </div>
               <div className="text-sm text-deep-sea/60">
                 Check the presentation screen for the complete results.
